@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  # Baza danych PostgreSQL
+  database:
+    image: postgres:15-alpine
+    container_name: task-manager-db
+    environment:
+      POSTGRES_DB: taskmanager
+      POSTGRES_USER: taskuser
+      POSTGRES_PASSWORD: taskpass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - task-manager-network
+
+  # Backend Spring Boot
+  backend:
+    build: ./backend
+    container_name: task-manager-backend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://database:5432/taskmanager
+      SPRING_DATASOURCE_USERNAME: taskuser
+      SPRING_DATASOURCE_PASSWORD: taskpass
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: false
+      CLERK_PUBLISHABLE_KEY: pk_test_c3VpdGVkLXdlcmV3b2xmLTE3LmNsZXJrLmFjY291bnRzLmRldiQ
+    ports:
+      - "8080:8080"
+    depends_on:
+      - database
+    networks:
+      - task-manager-network
+    volumes:
+      - ./uploads:/app/uploads
+
+  # Frontend React
+  frontend:
+    build: ./frontend
+    container_name: task-manager-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - task-manager-network
+
+volumes:
+  postgres_data:
+
+networks:
+  task-manager-network:
+    driver: bridge

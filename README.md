@@ -1,25 +1,28 @@
 # Task Manager - Aplikacja do Zarządzania Zadaniami
 
-Nowoczesna aplikacja do zarządzania zadaniami zbudowana w technologii MERN (MongoDB, Express.js, React, Node.js).
+Nowoczesna aplikacja do zarządzania zadaniami zbudowana z React frontend i Spring Boot backend.
 
 ## 🚀 Funkcje
 
 - ✅ Tworzenie, edycja i usuwanie zadań
-- ✅ Filtrowanie i sortowanie zadań
+- ✅ Filtrowanie i sortowanie zadań według kategorii
 - ✅ Wyszukiwanie zadań
-- ✅ Statystyki i dashboard
+- ✅ Przypisywanie zadań do użytkowników
+- ✅ Upload i wyświetlanie obrazów
+- ✅ Dark mode / Light mode
 - ✅ Responsywny design
 - ✅ Nowoczesny UI z Tailwind CSS
 - ✅ TypeScript dla lepszej jakości kodu
+- ✅ Autentykacja przez Clerk
 
 ## 🛠️ Technologie
 
 ### Backend
-- **Node.js** z Express.js
-- **MongoDB** z Mongoose
-- **JWT** do autoryzacji
-- **bcryptjs** do hashowania haseł
-- **express-validator** do walidacji
+- **Spring Boot** z Java 17
+- **PostgreSQL** jako baza danych
+- **JPA/Hibernate** do ORM
+- **Clerk** do autentykacji
+- **Maven** do zarządzania zależnościami
 
 ### Frontend
 - **React 18** z TypeScript
@@ -28,121 +31,138 @@ Nowoczesna aplikacja do zarządzania zadaniami zbudowana w technologii MERN (Mon
 - **Tailwind CSS** do stylowania
 - **Lucide React** do ikon
 - **date-fns** do obsługi dat
+- **Clerk React** do autentykacji
 
 ## 📦 Instalacja i Uruchomienie
 
-### Wymagania
-- Node.js (wersja 16 lub nowsza)
-- MongoDB (lokalnie lub MongoDB Atlas)
-- npm lub yarn
+### Opcja 1: Docker (Zalecane)
 
-### 1. Klonowanie repozytorium
 ```bash
-git clone <repository-url>
+git clone https://github.com/dominikdorawaa/task-manager-app.git
+cd task-manager-app
+docker-compose up --build
+```
+
+**Dostęp do aplikacji:**
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8080
+
+### Opcja 2: Lokalne uruchomienie
+
+#### Wymagania
+- Java 17+
+- Node.js (wersja 16 lub nowsza)
+- PostgreSQL
+- Maven
+- npm
+
+#### 1. Klonowanie repozytorium
+```bash
+git clone https://github.com/dominikdorawaa/task-manager-app.git
 cd task-manager-app
 ```
 
-### 2. Backend Setup
+#### 2. Backend Setup
 
 ```bash
 cd backend
-npm install
+mvn clean install
 ```
 
-Utwórz plik `.env` na podstawie `env.example`:
+Skonfiguruj bazę danych PostgreSQL i uruchom:
 ```bash
-cp env.example .env
+mvn spring-boot:run
 ```
 
-Edytuj plik `.env` i ustaw swoje zmienne środowiskowe:
-```env
-PORT=5000
-NODE_ENV=development
-MONGODB_URI=mongodb://localhost:27017/task-manager
-JWT_SECRET=your-super-secret-jwt-key
-CORS_ORIGIN=http://localhost:3000
-```
-
-Uruchom serwer:
-```bash
-npm run dev
-```
-
-### 3. Frontend Setup
+#### 3. Frontend Setup
 
 ```bash
 cd frontend
 npm install
-```
-
-Uruchom aplikację React:
-```bash
 npm start
 ```
 
-### 4. Dostęp do aplikacji
+#### 4. Dostęp do aplikacji
 
 - Frontend: http://localhost:3000
-- Backend API: http://localhost:5000
+- Backend API: http://localhost:8080
 
 ## 📁 Struktura Projektu
 
 ```
 task-manager-app/
 ├── backend/
-│   ├── models/          # Modele MongoDB
-│   ├── routes/          # Endpointy API
-│   ├── server.js        # Główny plik serwera
-│   └── package.json
+│   ├── src/main/java/com/taskmanager/
+│   │   ├── controller/     # Kontrolery REST API
+│   │   ├── model/          # Encje JPA
+│   │   ├── repository/     # Repozytoria danych
+│   │   ├── service/        # Logika biznesowa
+│   │   ├── security/       # Konfiguracja bezpieczeństwa
+│   │   └── dto/            # Data Transfer Objects
+│   ├── src/main/resources/
+│   │   └── application.yml # Konfiguracja aplikacji
+│   └── pom.xml
 ├── frontend/
 │   ├── src/
-│   │   ├── components/  # Komponenty React
-│   │   ├── services/    # Serwisy API
-│   │   ├── types/       # Typy TypeScript
-│   │   └── App.tsx      # Główny komponent
+│   │   ├── components/     # Komponenty React
+│   │   ├── services/       # Serwisy API
+│   │   ├── types/          # Typy TypeScript
+│   │   ├── contexts/       # Konteksty React
+│   │   └── App.tsx         # Główny komponent
+│   ├── public/
 │   └── package.json
+├── docker-compose.yml      # Konfiguracja Docker
+├── Dockerfile              # Dockerfile dla backendu
 └── README.md
 ```
 
 ## 🔧 API Endpoints
 
 ### Zadania
-- `GET /api/tasks` - Pobierz wszystkie zadania
+- `GET /api/tasks` - Pobierz wszystkie zadania użytkownika
 - `GET /api/tasks/:id` - Pobierz pojedyncze zadanie
 - `POST /api/tasks` - Utwórz nowe zadanie
 - `PUT /api/tasks/:id` - Aktualizuj zadanie
 - `DELETE /api/tasks/:id` - Usuń zadanie
 - `GET /api/tasks/stats/summary` - Statystyki zadań
 
-### Użytkownicy
-- `POST /api/users/register` - Rejestracja
-- `POST /api/users/login` - Logowanie
-- `GET /api/users/profile` - Profil użytkownika
-- `PUT /api/users/profile` - Aktualizuj profil
+### Pliki
+- `POST /api/files/upload` - Upload obrazów
+- `DELETE /api/files/images/:filename` - Usuń obraz
+
+### Autentykacja
+Aplikacja używa Clerk do autentykacji - wszystkie endpointy wymagają ważnego JWT tokena.
 
 ## 🎨 Funkcje UI
 
-- **Dashboard** z statystykami
+- **Dashboard** z kategoriami zadań
 - **Lista zadań** z filtrowaniem i sortowaniem
 - **Modal formularza** do tworzenia/edycji zadań
+- **Dark mode / Light mode** przełącznik
+- **Upload obrazów** do zadań
 - **Responsywny design** dla wszystkich urządzeń
 - **Nowoczesne animacje** i przejścia
 - **Intuicyjna nawigacja**
 
 ## 🔒 Bezpieczeństwo
 
-- Hashowanie haseł z bcryptjs
-- JWT tokens do autoryzacji
+- **Clerk** do autentykacji i autoryzacji
+- JWT tokens do komunikacji z API
 - Walidacja danych wejściowych
 - CORS configuration
-- Helmet.js dla bezpieczeństwa HTTP
+- Spring Security dla bezpieczeństwa backendu
 
 ## 🚀 Deployment
 
-### Backend (Heroku/Netlify)
+### Docker (Zalecane)
+```bash
+docker-compose up --build
+```
+
+### Backend (Heroku/Railway)
 ```bash
 cd backend
-npm run build
+mvn clean package
 ```
 
 ### Frontend (Vercel/Netlify)
@@ -158,6 +178,17 @@ MIT License
 ## 🤝 Wkład
 
 Pull requests są mile widziane. Dla większych zmian, otwórz issue najpierw, aby omówić co chciałbyś zmienić.
+
+## 🐳 Docker
+
+Szczegółowe instrukcje Docker znajdziesz w pliku [DOCKER.md](DOCKER.md).
+
+### Szybki start z Docker
+```bash
+git clone https://github.com/dominikdorawaa/task-manager-app.git
+cd task-manager-app
+docker-compose up --build
+```
 
 ## 📞 Wsparcie
 

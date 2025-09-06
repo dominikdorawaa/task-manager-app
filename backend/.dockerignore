@@ -1,0 +1,10 @@
+target/
+*.jar
+*.war
+*.ear
+*.class
+.git
+.gitignore
+README.md
+Dockerfile
+.dockerignore
