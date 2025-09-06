@@ -18,4 +18,4 @@ RUN mvn clean package -DskipTests
 EXPOSE 8080
 
 # Uruchom aplikację
-CMD ["java", "-jar", "target/task-manager-0.0.1-SNAPSHOT.jar"]
+CMD ["java", "-jar", "target/task-manager-1.0.0.jar"]
