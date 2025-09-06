@@ -95,8 +95,8 @@ const TaskForm: React.FC<TaskFormProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
-      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-md sm:max-w-lg max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
-        <div className="p-4 sm:p-6">
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-sm sm:max-w-lg max-h-[90vh] sm:max-h-[90vh] overflow-y-auto">
+        <div className="p-3 sm:p-6">
           <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-4 sm:mb-6">
             {task ? 'Edytuj zadanie' : 'Nowe zadanie'}
           </h2>

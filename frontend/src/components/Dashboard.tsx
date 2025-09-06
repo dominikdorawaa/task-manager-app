@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
-import { useAuth, useUser } from '@clerk/clerk-react';
+import { useAuth, useUser, SignInButton } from '@clerk/clerk-react';
 import { tasksApi, setClerkToken } from '../services/api';
 import { Task, CreateTaskData, UpdateTaskData, BackendTaskData } from '../types';
 import TaskList from './TaskList';
@@ -363,15 +363,20 @@ const Dashboard: React.FC = () => {
   // Jeśli użytkownik nie jest zalogowany
   if (!isSignedIn) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="max-w-md w-full text-center">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Zarządzanie Zadaniami</h1>
-          <p className="text-gray-600 mb-8">
+      <div className="min-h-screen bg-gray-50 dark:bg-black flex items-center justify-center">
+        <div className="max-w-md w-full text-center px-4">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Zarządzanie Zadaniami</h1>
+          <p className="text-gray-600 dark:text-gray-300 mb-8">
             Zaloguj się, aby zobaczyć i zarządzać swoimi zadaniami
           </p>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <p className="text-sm text-gray-500">
-              Użyj przycisku "Zaloguj się" w górnym prawym rogu
+          <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow border border-gray-200 dark:border-gray-800">
+            <SignInButton mode="modal">
+              <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
+                Zaloguj się
+              </button>
+            </SignInButton>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
+              Lub zarejestruj się, jeśli nie masz jeszcze konta
             </p>
           </div>
         </div>

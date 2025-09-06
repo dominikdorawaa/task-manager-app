@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { CheckSquare, Moon, Sun, Menu, X } from "lucide-react";
-import { SignInButton, UserButton, useUser } from "@clerk/clerk-react";
+import { UserButton, useUser } from "@clerk/clerk-react";
 import { useTheme } from "../contexts/ThemeContext";
 
 const Header: React.FC = () => {
@@ -43,14 +43,8 @@ const Header: React.FC = () => {
               )}
             </button>
             
-            {isSignedIn && user ? (
+            {isSignedIn && user && (
               <UserButton afterSignOutUrl="/" />
-            ) : (
-              <SignInButton mode="modal">
-                <button className="flex items-center space-x-1 text-primary-600 hover:text-primary-800 text-sm font-medium">
-                  <span>Zaloguj się</span>
-                </button>
-              </SignInButton>
             )}
           </div>
 
@@ -76,7 +70,7 @@ const Header: React.FC = () => {
               </Link>
             </nav>
             
-            <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex flex-col items-center space-y-4 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
               <button
                 onClick={toggleTheme}
                 className="flex items-center space-x-2 p-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 transition-colors"
@@ -89,14 +83,8 @@ const Header: React.FC = () => {
                 <span className="text-sm">{theme === 'light' ? 'Ciemny' : 'Jasny'}</span>
               </button>
               
-              {isSignedIn && user ? (
+              {isSignedIn && user && (
                 <UserButton afterSignOutUrl="/" />
-              ) : (
-                <SignInButton mode="modal">
-                  <button className="flex items-center space-x-1 text-primary-600 hover:text-primary-800 text-sm font-medium">
-                    <span>Zaloguj się</span>
-                  </button>
-                </SignInButton>
               )}
             </div>
           </div>

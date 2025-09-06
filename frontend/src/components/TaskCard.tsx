@@ -188,14 +188,18 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
         {/* Przypisany użytkownik */}
         {task.assignedTo && (
-          <div className="flex items-center text-sm text-gray-600">
-            <UserIcon size={14} className="mr-2" />
-            <span>
-              {task.isAssignedToMe ? 'Przypisane przez:' : 'Przypisane do:'} 
-              <span className="ml-1 font-medium text-blue-600">
+          <div className="text-sm text-gray-600">
+            <div className="flex items-center mb-1">
+              <UserIcon size={14} className="mr-2 flex-shrink-0" />
+              <span className="text-xs">
+                {task.isAssignedToMe ? 'Przypisane przez:' : 'Przypisane do:'}
+              </span>
+            </div>
+            <div className="ml-6">
+              <span className="font-medium text-blue-600 break-words">
                 {task.isAssignedToMe ? getUserName(task.clerkUserId) : getUserName(task.assignedTo)}
               </span>
-            </span>
+            </div>
           </div>
         )}
 
