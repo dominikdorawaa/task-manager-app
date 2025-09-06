@@ -94,23 +94,23 @@ const TaskForm: React.FC<TaskFormProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-md sm:max-w-lg max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+        <div className="p-4 sm:p-6">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-4 sm:mb-6">
             {task ? 'Edytuj zadanie' : 'Nowe zadanie'}
           </h2>
 
-          <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-3 sm:space-y-4">
             {/* Tytuł */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Tytuł *
               </label>
               <input
                 type="text"
                 {...register('title', { required: 'Tytuł jest wymagany' })}
-                className="input"
+                className="input text-base"
                 placeholder="Wprowadź tytuł zadania"
               />
               {errors.title && (
@@ -120,59 +120,62 @@ const TaskForm: React.FC<TaskFormProps> = ({
 
             {/* Opis */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Opis
               </label>
               <textarea
                 {...register('description')}
                 rows={3}
-                className="input resize-none"
+                className="input resize-none text-base"
                 placeholder="Wprowadź opis zadania (opcjonalnie)"
               />
             </div>
 
-            {/* Status */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
-              <select {...register('status')} className="input">
-                <option value="do zrobienia">Do zrobienia</option>
-                <option value="w trakcie">W trakcie</option>
-                <option value="zakończone">Zakończone</option>
-                <option value="anulowane">Anulowane</option>
-              </select>
-            </div>
+            {/* Status i Priorytet w jednym rzędzie na większych ekranach */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              {/* Status */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Status
+                </label>
+                <select {...register('status')} className="input text-base">
+                  <option value="do zrobienia">Do zrobienia</option>
+                  <option value="w trakcie">W trakcie</option>
+                  <option value="zakończone">Zakończone</option>
+                  <option value="anulowane">Anulowane</option>
+                </select>
+              </div>
 
-            {/* Priorytet */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Priorytet
-              </label>
-              <select {...register('priority')} className="input">
-                <option value="niski">Niski</option>
-                <option value="średni">Średni</option>
-                <option value="wysoki">Wysoki</option>
-                <option value="krytyczny">Krytyczny</option>
-              </select>
+              {/* Priorytet */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Priorytet
+                </label>
+                <select {...register('priority')} className="input text-base">
+                  <option value="niski">Niski</option>
+                  <option value="średni">Średni</option>
+                  <option value="wysoki">Wysoki</option>
+                  <option value="krytyczny">Krytyczny</option>
+                </select>
+              </div>
             </div>
 
             {/* Data termin */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Data termin
               </label>
               <input
                 type="date"
                 {...register('dueDate')}
-                className="input"
+                className="input text-base"
                 min={new Date().toISOString().split('T')[0]}
               />
             </div>
 
             {/* Przypisany użytkownik */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Przypisany użytkownik
               </label>
               <UserSelector
@@ -187,7 +190,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
 
             {/* Tagi */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Tagi
               </label>
               <div className="flex gap-2 mb-2">
@@ -196,16 +199,16 @@ const TaskForm: React.FC<TaskFormProps> = ({
                   value={newTag}
                   onChange={(e) => setNewTag(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  className="input flex-1"
+                  className="input flex-1 text-base"
                   placeholder="Dodaj tag"
                 />
                 <button
                   type="button"
                   onClick={addTag}
-                  className="btn btn-secondary px-3"
+                  className="btn btn-secondary px-3 py-2"
                   disabled={!newTag.trim()}
                 >
-                  <Plus size={16} />
+                  <Plus size={18} />
                 </button>
               </div>
               
@@ -242,14 +245,14 @@ const TaskForm: React.FC<TaskFormProps> = ({
               <button
                 type="button"
                 onClick={onCancel}
-                className="btn btn-secondary flex-1"
+                className="btn btn-secondary flex-1 py-3 text-base"
                 disabled={isLoading}
               >
                 Anuluj
               </button>
               <button
                 type="submit"
-                className="btn btn-primary flex-1"
+                className="btn btn-primary flex-1 py-3 text-base"
                 disabled={isLoading}
               >
                 {isLoading ? 'Zapisywanie...' : (task ? 'Zapisz zmiany' : 'Utwórz zadanie')}

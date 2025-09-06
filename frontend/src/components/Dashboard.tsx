@@ -393,11 +393,11 @@ const Dashboard: React.FC = () => {
       
       {/* ID użytkownika */}
       {user && (
-        <div className="mt-4 p-3 bg-blue-50 dark:bg-gray-800 border border-blue-200 dark:border-gray-700 rounded-lg">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-2">
+        <div className="mt-4 p-3 sm:p-4 bg-blue-50 dark:bg-gray-800 border border-blue-200 dark:border-gray-700 rounded-lg">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex flex-col space-y-2">
               <span className="text-sm font-medium text-blue-900 dark:text-blue-300">Twoje ID:</span>
-              <code className="bg-blue-100 dark:bg-gray-700 px-2 py-1 rounded text-xs sm:text-sm font-mono text-gray-900 dark:text-gray-100 break-all">
+              <code className="bg-blue-100 dark:bg-gray-700 px-3 py-2 rounded text-sm font-mono text-gray-900 dark:text-gray-100 break-all">
                 {user.id} ({user.fullName || user.primaryEmailAddress?.emailAddress || 'Brak nazwy'})
               </code>
             </div>
@@ -407,17 +407,17 @@ const Dashboard: React.FC = () => {
                 setCopyAnimation(true);
                 setTimeout(() => setCopyAnimation(false), 1000);
               }}
-              className={`text-sm font-medium transition-all duration-300 self-start sm:self-auto ${
+              className={`px-4 py-2 text-sm font-medium transition-all duration-300 rounded-lg ${
                 copyAnimation 
-                  ? 'text-green-600 scale-110' 
-                  : 'text-blue-600 hover:text-blue-800'
+                  ? 'text-green-600 bg-green-100 scale-105' 
+                  : 'text-blue-600 bg-blue-100 hover:bg-blue-200'
               }`}
               title="Kopiuj ID"
             >
-              {copyAnimation ? 'Skopiowano!' : 'Kopiuj'}
+              {copyAnimation ? '✓ Skopiowano!' : '📋 Kopiuj ID'}
             </button>
           </div>
-          <div className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+          <div className="text-xs text-blue-600 dark:text-blue-400 mt-3">
             💡 Użyj tego ID do przypisywania zadań innym użytkownikom
           </div>
         </div>
