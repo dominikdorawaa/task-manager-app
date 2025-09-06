@@ -382,52 +382,63 @@ const Dashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-black">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Nagłówek */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Zarządzanie Zadaniami</h1>
-            <p className="text-gray-600 dark:text-gray-300 mt-1">Organizuj swoje zadania w prosty i efektywny sposób</p>
-            
-            {/* ID użytkownika */}
-            {user && (
-              <div className="mt-4 p-3 bg-blue-50 dark:bg-gray-800 border border-blue-200 dark:border-gray-700 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm font-medium text-blue-900 dark:text-blue-300">Twoje ID:</span>
-                    <code className="bg-blue-100 dark:bg-gray-700 px-2 py-1 rounded text-sm font-mono text-gray-900 dark:text-gray-100">
-                      {user.id} ({user.fullName || user.primaryEmailAddress?.emailAddress || 'Brak nazwy'})
-                    </code>
-                  </div>
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(user.id);
-                      setCopyAnimation(true);
-                      setTimeout(() => setCopyAnimation(false), 1000);
-                    }}
-                    className={`text-sm font-medium transition-all duration-300 ${
-                      copyAnimation 
-                        ? 'text-green-600 scale-110' 
-                        : 'text-blue-600 hover:text-blue-800'
-                    }`}
-                    title="Kopiuj ID"
-                  >
-                    {copyAnimation ? 'Skopiowano!' : 'Kopiuj'}
-                  </button>
-                </div>
-                <div className="text-xs text-blue-600 dark:text-blue-400 mt-2">
-                  💡 Użyj tego ID do przypisywania zadań innym użytkownikom
-                </div>
-              </div>
-            )}
+
+
+{/* Nagłówek */}
+<div className="mb-8">
+  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+    <div className="flex-1">
+      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Zarządzanie Zadaniami</h1>
+      <p className="text-gray-600 dark:text-gray-300 mt-1 text-sm sm:text-base">Organizuj swoje zadania w prosty i efektywny sposób</p>
+      
+      {/* ID użytkownika */}
+      {user && (
+        <div className="mt-4 p-3 bg-blue-50 dark:bg-gray-800 border border-blue-200 dark:border-gray-700 rounded-lg">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-2">
+              <span className="text-sm font-medium text-blue-900 dark:text-blue-300">Twoje ID:</span>
+              <code className="bg-blue-100 dark:bg-gray-700 px-2 py-1 rounded text-xs sm:text-sm font-mono text-gray-900 dark:text-gray-100 break-all">
+                {user.id} ({user.fullName || user.primaryEmailAddress?.emailAddress || 'Brak nazwy'})
+              </code>
+            </div>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(user.id);
+                setCopyAnimation(true);
+                setTimeout(() => setCopyAnimation(false), 1000);
+              }}
+              className={`text-sm font-medium transition-all duration-300 self-start sm:self-auto ${
+                copyAnimation 
+                  ? 'text-green-600 scale-110' 
+                  : 'text-blue-600 hover:text-blue-800'
+              }`}
+              title="Kopiuj ID"
+            >
+              {copyAnimation ? 'Skopiowano!' : 'Kopiuj'}
+            </button>
           </div>
-          <button
-            onClick={openNewTaskForm}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded flex items-center gap-2"
-          >
-            <Plus size={20} />
-            Nowe zadanie
-          </button>
+          <div className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+            💡 Użyj tego ID do przypisywania zadań innym użytkownikom
+          </div>
         </div>
+      )}
+    </div>
+    
+    {/* Przycisk Nowe zadanie */}
+    <div className="flex-shrink-0">
+      <button
+        onClick={openNewTaskForm}
+        className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded flex items-center justify-center gap-2 text-sm sm:text-base"
+      >
+        <Plus size={18} className="sm:w-5 sm:h-5" />
+        <span className="hidden xs:inline">Nowe zadanie</span>
+        <span className="xs:hidden">Nowe</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+
 
         {/* Błędy */}
         {tasksError && (
