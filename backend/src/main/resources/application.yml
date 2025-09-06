@@ -1,0 +1,36 @@
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/task_manager?currentSchema=public
+    username: postgres
+    password: root
+    hikari:
+      connection-timeout: 20000
+      maximum-pool-size: 5
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 25MB
+      enabled: true
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          lob.non_contextual_creation: true
+        globally_quoted_identifiers: true
+        default_schema: public
+
+jwt:
+  secret: your_jwt_secret_key_here_make_it_long_and_secure_in_production
+  expiration: 86400000 # 24 hours
+
+server:
+  port: 8080
+  error:
+    include-message: always
