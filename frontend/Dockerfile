@@ -5,13 +5,13 @@ FROM node:18-alpine
 WORKDIR /app
 
 # Skopiuj pliki package.json i package-lock.json
-COPY package*.json ./
+COPY frontend/package*.json ./
 
 # Zainstaluj zależności
 RUN npm ci --only=production
 
 # Skopiuj resztę plików
-COPY . .
+COPY frontend/ .
 
 # Zbuduj aplikację
 RUN npm run build
@@ -23,7 +23,7 @@ FROM nginx:alpine
 COPY --from=0 /app/build /usr/share/nginx/html
 
 # Skopiuj konfigurację nginx
-COPY nginx.conf /etc/nginx/nginx.conf
+COPY frontend/nginx.conf /etc/nginx/nginx.conf
 
 # Eksponuj port
 EXPOSE 80
