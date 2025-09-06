@@ -87,34 +87,7 @@ npm start
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:8080
 
-## 📁 Struktura Projektu
 
-```
-task-manager-app/
-├── backend/
-│   ├── src/main/java/com/taskmanager/
-│   │   ├── controller/     # Kontrolery REST API
-│   │   ├── model/          # Encje JPA
-│   │   ├── repository/     # Repozytoria danych
-│   │   ├── service/        # Logika biznesowa
-│   │   ├── security/       # Konfiguracja bezpieczeństwa
-│   │   └── dto/            # Data Transfer Objects
-│   ├── src/main/resources/
-│   │   └── application.yml # Konfiguracja aplikacji
-│   └── pom.xml
-├── frontend/
-│   ├── src/
-│   │   ├── components/     # Komponenty React
-│   │   ├── services/       # Serwisy API
-│   │   ├── types/          # Typy TypeScript
-│   │   ├── contexts/       # Konteksty React
-│   │   └── App.tsx         # Główny komponent
-│   ├── public/
-│   └── package.json
-├── docker-compose.yml      # Konfiguracja Docker
-├── Dockerfile              # Dockerfile dla backendu
-└── README.md
-```
 
 ## 🔧 API Endpoints
 
@@ -152,47 +125,10 @@ Aplikacja używa Clerk do autentykacji - wszystkie endpointy wymagają ważnego 
 - CORS configuration
 - Spring Security dla bezpieczeństwa backendu
 
-## 🚀 Deployment
-
-### Docker (Zalecane)
-```bash
-docker-compose up --build
-```
-
-### Backend (Heroku/Railway)
-```bash
-cd backend
-mvn clean package
-```
-
-### Frontend (Vercel/Netlify)
-```bash
-cd frontend
-npm run build
-```
 
 ## 📝 Licencja
 
 MIT License
-
-## 🤝 Wkład
-
-Pull requests są mile widziane. Dla większych zmian, otwórz issue najpierw, aby omówić co chciałbyś zmienić.
-
-## 🐳 Docker
-
-Szczegółowe instrukcje Docker znajdziesz w pliku [DOCKER.md](DOCKER.md).
-
-### Szybki start z Docker
-```bash
-git clone https://github.com/dominikdorawaa/task-manager-app.git
-cd task-manager-app
-docker-compose up --build
-```
-
-## 📞 Wsparcie
-
-Jeśli masz pytania lub problemy, otwórz issue w repozytorium.
 
 
 
