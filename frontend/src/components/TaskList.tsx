@@ -95,9 +95,9 @@ const TaskList: React.FC<TaskListProps> = ({
     <div className="space-y-6">
       {/* Filtry i wyszukiwanie */}
       <div className="card">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Wyszukiwanie */}
-          <div className="relative">
+          <div className="relative sm:col-span-2 lg:col-span-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
             <input
               type="text"
@@ -163,7 +163,7 @@ const TaskList: React.FC<TaskListProps> = ({
       </div>
 
       {/* Lista zadań */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
         {sortedTasks.map((task) => (
           <TaskCard
             key={task._id}

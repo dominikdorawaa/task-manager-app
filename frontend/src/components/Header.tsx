@@ -1,12 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { CheckSquare, Moon, Sun } from "lucide-react";
+import { CheckSquare, Moon, Sun, Menu, X } from "lucide-react";
 import { SignInButton, UserButton, useUser } from "@clerk/clerk-react";
 import { useTheme } from "../contexts/ThemeContext";
 
 const Header: React.FC = () => {
   const { isSignedIn, user } = useUser();
   const { theme, toggleTheme } = useTheme();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
     <header className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800">
@@ -18,8 +19,8 @@ const Header: React.FC = () => {
             <span className="text-xl font-bold text-gray-900 dark:text-white">Task Manager</span>
           </Link>
 
-          {/* Nawigacja */}
-          <nav className="flex items-center space-x-8">
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center space-x-8">
             <Link
               to="/"
               className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors"
@@ -28,9 +29,8 @@ const Header: React.FC = () => {
             </Link>
           </nav>
 
-          {/* Profil użytkownika */}
-          <div className="flex items-center space-x-4">
-            {/* Przełącznik motywu */}
+          {/* Desktop Profile */}
+          <div className="hidden md:flex items-center space-x-4">
             <button
               onClick={toggleTheme}
               className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 transition-colors"
@@ -53,7 +53,54 @@ const Header: React.FC = () => {
               </SignInButton>
             )}
           </div>
+
+          {/* Mobile menu button */}
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="md:hidden p-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 transition-colors"
+          >
+            {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
         </div>
+
+        {/* Mobile Navigation */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden border-t border-gray-200 dark:border-gray-700 py-4">
+            <nav className="flex flex-col space-y-2">
+              <Link
+                to="/"
+                className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Dashboard
+              </Link>
+            </nav>
+            
+            <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <button
+                onClick={toggleTheme}
+                className="flex items-center space-x-2 p-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 transition-colors"
+              >
+                {theme === 'light' ? (
+                  <Moon size={20} className="text-gray-600 dark:text-gray-300" />
+                ) : (
+                  <Sun size={20} className="text-gray-600 dark:text-gray-300" />
+                )}
+                <span className="text-sm">{theme === 'light' ? 'Ciemny' : 'Jasny'}</span>
+              </button>
+              
+              {isSignedIn && user ? (
+                <UserButton afterSignOutUrl="/" />
+              ) : (
+                <SignInButton mode="modal">
+                  <button className="flex items-center space-x-1 text-primary-600 hover:text-primary-800 text-sm font-medium">
+                    <span>Zaloguj się</span>
+                  </button>
+                </SignInButton>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </header>
   );

@@ -444,51 +444,56 @@ const Dashboard: React.FC = () => {
         )}
 
         {/* Przyciski kategorii */}
-        <div className="mb-6 flex space-x-2">
-          <button
-            onClick={() => setTaskCategory('all')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              taskCategory === 'all'
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700'
-            }`}
-          >
-            Wszystkie ({tasks.length})
-          </button>
-          <button
-            onClick={() => setTaskCategory('my')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              taskCategory === 'my'
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700'
-            }`}
-          >
-            Utworzone przeze mnie ({tasks.filter(t => t.isCreatedByMe).length})
-          </button>
-          <button
-            onClick={() => setTaskCategory('assigned')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              taskCategory === 'assigned'
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700'
-            }`}
-          >
-            Przypisane do mnie ({tasks.filter(t => t.isAssignedToMe).length})
-          </button>
-          <button
-            onClick={() => setTaskCategory('assigned-to-users')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              taskCategory === 'assigned-to-users'
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700'
-            }`}
-          >
-            Przypisane do użytkowników ({tasks.filter(t => {
-              if (!t.isCreatedByMe || !t.assignedTo) return false;
-              const cleanAssignedTo = t.assignedTo.replace(/\s*\(.+?\)$/, '');
-              return cleanAssignedTo !== user?.id && t.assignedTo !== user?.primaryEmailAddress?.emailAddress;
-            }).length})
-          </button>
+        <div className="mb-6">
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setTaskCategory('all')}
+              className={`px-3 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base ${
+                taskCategory === 'all'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700'
+              }`}
+            >
+              Wszystkie ({tasks.length})
+            </button>
+            <button
+              onClick={() => setTaskCategory('my')}
+              className={`px-3 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base ${
+                taskCategory === 'my'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700'
+              }`}
+            >
+              <span className="hidden sm:inline">Utworzone przeze mnie</span>
+              <span className="sm:hidden">Moje</span> ({tasks.filter(t => t.isCreatedByMe).length})
+            </button>
+            <button
+              onClick={() => setTaskCategory('assigned')}
+              className={`px-3 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base ${
+                taskCategory === 'assigned'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700'
+              }`}
+            >
+              <span className="hidden sm:inline">Przypisane do mnie</span>
+              <span className="sm:hidden">Przypisane</span> ({tasks.filter(t => t.isAssignedToMe).length})
+            </button>
+            <button
+              onClick={() => setTaskCategory('assigned-to-users')}
+              className={`px-3 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base ${
+                taskCategory === 'assigned-to-users'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700'
+              }`}
+            >
+              <span className="hidden sm:inline">Przypisane do użytkowników</span>
+              <span className="sm:hidden">Do użytkowników</span> ({tasks.filter(t => {
+                if (!t.isCreatedByMe || !t.assignedTo) return false;
+                const cleanAssignedTo = t.assignedTo.replace(/\s*\(.+?\)$/, '');
+                return cleanAssignedTo !== user?.id && t.assignedTo !== user?.primaryEmailAddress?.emailAddress;
+              }).length})
+            </button>
+          </div>
         </div>
 
         {/* Podkategorie dla "Przypisane do mnie" */}
