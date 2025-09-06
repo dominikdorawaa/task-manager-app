@@ -4,9 +4,9 @@ FROM openjdk:17-jdk-slim
 # Ustaw katalog roboczy
 WORKDIR /app
 
-# Skopiuj pliki Maven
-COPY pom.xml .
-COPY src ./src
+# Skopiuj pliki Maven z katalogu backend
+COPY backend/pom.xml .
+COPY backend/src ./src
 
 # Zainstaluj Maven
 RUN apt-get update && apt-get install -y maven && rm -rf /var/lib/apt/lists/*
