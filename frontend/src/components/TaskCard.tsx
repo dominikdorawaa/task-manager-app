@@ -67,33 +67,35 @@ const TaskCard: React.FC<TaskCardProps> = ({
   
   const getPriorityColor = (priority: Task['priority']) => {
     switch (priority) {
-      case 'krytyczny': return 'text-red-600 bg-red-100';
-      case 'wysoki': return 'text-orange-600 bg-orange-100';
-      case 'średni': return 'text-yellow-600 bg-yellow-100';
-      case 'niski': return 'text-green-600 bg-green-100';
-      default: return 'text-gray-600 bg-gray-100';
+      case 'krytyczny': return 'text-red-500 bg-red-50 dark:text-red-300 dark:bg-red-900/30';
+      case 'wysoki': return 'text-orange-500 bg-orange-50 dark:text-orange-300 dark:bg-orange-900/30';
+      case 'średni': return 'text-yellow-500 bg-yellow-50 dark:text-yellow-300 dark:bg-yellow-900/30';
+      case 'niski': return 'text-green-500 bg-green-50 dark:text-green-300 dark:bg-green-900/30';
+      default: return 'text-gray-500 bg-gray-50 dark:text-gray-300 dark:bg-gray-800/50';
     }
   };
 
   const getStatusColor = (status: Task['status']) => {
     switch (status) {
-      case 'zakończone': return 'text-green-600 bg-green-100';
-      case 'w trakcie': return 'text-blue-600 bg-blue-100';
-      case 'anulowane': return 'text-gray-600 bg-gray-100';
-      default: return 'text-yellow-600 bg-yellow-100';
+      case 'zakończone': return 'text-green-500 bg-green-50 dark:text-green-300 dark:bg-green-900/30';
+      case 'w trakcie': return 'text-blue-500 bg-blue-50 dark:text-blue-300 dark:bg-blue-900/30';
+      case 'anulowane': return 'text-gray-500 bg-gray-50 dark:text-gray-300 dark:bg-gray-800/50';
+      default: return 'text-blue-500 bg-blue-50 dark:text-blue-300 dark:bg-blue-900/30';
     }
   };
 
   return (
     <div className={clsx(
-      "card hover:shadow-md transition-shadow duration-200",
-      isOverdue && "border-red-300 bg-red-50",
-      task.isAssignedToMe && "border-blue-300 bg-blue-50"
+      "card hover:shadow-md transition-shadow duration-200 border dark:border-[#404040]",
+      isOverdue && "border-red-300 bg-red-50 dark:border-red-500/50 dark:bg-red-900/20",
+      task.priority === 'krytyczny' && "border-red-300 bg-red-50 dark:border-red-500/50 dark:bg-red-900/20",
+      task.status === 'zakończone' && "border-green-300 bg-green-50 dark:border-green-500/50 dark:bg-green-900/20",
+      task.isAssignedToMe && task.priority !== 'krytyczny' && task.status !== 'zakończone' && "border-blue-300 bg-blue-50 dark:border-blue-500/50 dark:bg-blue-900/20"
     )}>
       {/* Etykieta dla zadań przypisanych */}
       {task.isAssignedToMe && (
         <div className="mb-2">
-          <span className="inline-block px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+          <span className="inline-block px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 rounded-full border border-blue-200 dark:border-blue-500/50">
             Przypisane do mnie
           </span>
         </div>
@@ -101,11 +103,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
       
       <div className="flex justify-between items-start mb-4">
         <div className="flex-1">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
             {task.title}
           </h3>
           {task.description && (
-            <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+            <p className="text-gray-600 dark:text-gray-300 text-sm mb-3 line-clamp-2">
               {task.description}
             </p>
           )}
@@ -117,8 +119,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
             disabled={task.isAssignedToMe && !task.isCreatedByMe}
             className={`p-1 transition-colors ${
               task.isAssignedToMe && !task.isCreatedByMe
-                ? 'text-gray-300 cursor-not-allowed' 
-                : 'text-gray-400 hover:text-gray-600'
+                ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed' 
+                : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
             }`}
             title={task.isAssignedToMe && !task.isCreatedByMe ? "Nie możesz edytować zadań przypisanych przez innych" : "Edytuj zadanie"}
           >
@@ -129,8 +131,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
             disabled={task.isAssignedToMe && !task.isCreatedByMe}
             className={`p-1 transition-colors ${
               task.isAssignedToMe && !task.isCreatedByMe
-                ? 'text-gray-300 cursor-not-allowed' 
-                : 'text-gray-400 hover:text-red-600'
+                ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed' 
+                : 'text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400'
             }`}
             title={task.isAssignedToMe && !task.isCreatedByMe ? "Nie możesz usuwać zadań przypisanych przez innych" : "Usuń zadanie"}
           >
@@ -155,14 +157,14 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
         {/* Data termin */}
         {task.dueDate && (
-          <div className="flex items-center text-sm text-gray-600">
+          <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
             <Calendar size={14} className="mr-2" />
-            <span className={clsx(isOverdue && "text-red-600 font-medium")}>
+            <span className={clsx(isOverdue && "text-red-600 dark:text-red-400 font-medium")}>
               Termin: {format(new Date(task.dueDate), 'dd MMMM yyyy', { locale: pl })}
               {isOverdue && " (przekroczony)"}
             </span>
             {daysUntilDue !== null && !isOverdue && (
-              <span className="ml-2 px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+              <span className="ml-2 px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-500/50">
                 {daysUntilDue === 0 ? "Dziś" : 
                  daysUntilDue === 1 ? "1 dzień" : 
                  `${daysUntilDue} dni`}
@@ -174,11 +176,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
         {/* Tagi */}
         {task.tags && task.tags.length > 0 && (
           <div className="flex items-center flex-wrap gap-1">
-            <Tag size={14} className="text-gray-400 mr-1" />
+            <Tag size={14} className="text-gray-400 dark:text-gray-500 mr-1" />
             {task.tags.map((tag, index) => (
               <span
                 key={index}
-                className="inline-block px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded"
+                className="inline-block px-2 py-1 text-xs bg-gray-100 text-gray-700 dark:bg-[#212121] dark:text-gray-300 rounded border border-gray-200 dark:border-[#404040]"
               >
                 {tag}
               </span>
@@ -188,7 +190,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
         {/* Przypisany użytkownik */}
         {task.assignedTo && (
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-gray-600 dark:text-gray-300">
             <div className="flex items-center mb-1">
               <UserIcon size={14} className="mr-2 flex-shrink-0" />
               <span className="text-xs">
@@ -196,7 +198,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
               </span>
             </div>
             <div className="ml-6">
-              <span className="font-medium text-blue-600 break-words">
+              <span className="font-medium text-blue-600 dark:text-blue-300 break-words">
                 {task.isAssignedToMe ? getUserName(task.clerkUserId) : getUserName(task.assignedTo)}
               </span>
             </div>
@@ -214,7 +216,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
         })()}
         {task.images && task.images.length > 0 && (
           <div className="space-y-2">
-            <div className="flex items-center text-sm text-gray-600">
+            <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
               <ImageIcon size={14} className="mr-2" />
               <span>Zdjęcia ({task.images.length})</span>
             </div>
@@ -224,7 +226,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                   key={index}
                   src={filesApi.getImageUrl(image)}
                   alt={`Zdjęcie ${index + 1}`}
-                  className="w-full h-16 object-cover rounded border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
+                  className="w-full h-16 object-cover rounded border border-gray-200 dark:border-white cursor-pointer hover:opacity-80 transition-opacity"
                   onClick={() => openImageModal(index)}
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
@@ -234,7 +236,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
               ))}
               {task.images.length > 3 && (
                 <div 
-                  className="w-full h-16 bg-gray-100 rounded border border-gray-200 flex items-center justify-center text-xs text-gray-500 cursor-pointer hover:bg-gray-200 transition-colors"
+                  className="w-full h-16 bg-gray-100 dark:bg-[#212121] rounded border border-gray-200 dark:border-[#404040] flex items-center justify-center text-xs text-gray-500 dark:text-gray-300 cursor-pointer hover:bg-gray-200 dark:hover:bg-[#2a2a2a] transition-colors"
                   onClick={() => openImageModal(0)}
                 >
                   +{task.images.length - 3} więcej
@@ -245,7 +247,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
         )}
 
         {/* Data utworzenia */}
-        <div className="text-xs text-gray-400 pt-2 border-t border-gray-100">
+        <div className="text-xs text-gray-400 dark:text-gray-500 pt-2 border-t border-gray-100 dark:border-gray-700">
           Utworzono: {format(new Date(task.createdAt), 'dd.MM.yyyy HH:mm', { locale: pl })}
         </div>
       </div>

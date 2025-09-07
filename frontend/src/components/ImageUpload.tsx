@@ -130,7 +130,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 
   return (
     <div ref={containerRef} className="space-y-3" tabIndex={0}>
-      <label className="block text-sm font-medium text-gray-700">
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
         Zdjęcia ({images.length}/{maxImages})
       </label>
       
@@ -141,7 +141,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
             type="button"
             onClick={triggerFileSelect}
             disabled={uploading}
-            className="flex items-center gap-2 px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 border-2 border-dashed border-gray-300 dark:border-[#404040] rounded-lg hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors disabled:opacity-50 text-gray-700 dark:text-gray-300"
           >
             {uploading ? (
               <>
@@ -164,7 +164,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
                 containerRef.current?.focus();
                 alert('Kliknij tutaj i wklej zdjęcie (Ctrl+V)');
               }}
-              className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-[#404040] rounded-lg hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors text-gray-700 dark:text-gray-300"
             >
               <Clipboard size={16} />
               <span>Wklej</span>
@@ -191,7 +191,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
               <img
                 src={filesApi.getImageUrl(image)}
                 alt={`Zdjęcie ${index + 1}`}
-                className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                className="w-full h-24 object-cover rounded-lg border border-gray-200 dark:border-[#404040]"
                 onError={(e) => {
                   // Fallback jeśli zdjęcie się nie załaduje
                   const target = e.target as HTMLImageElement;
@@ -201,8 +201,8 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
               />
               
               {/* Fallback icon */}
-              <div className="hidden absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg border border-gray-200">
-                <ImageIcon size={20} className="text-gray-400" />
+              <div className="hidden absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-[#212121] rounded-lg border border-gray-200 dark:border-[#404040]">
+                <ImageIcon size={20} className="text-gray-400 dark:text-gray-500" />
               </div>
               
               {/* Remove Button */}
@@ -219,7 +219,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       )}
 
       {/* Info Text */}
-      <p className="text-xs text-gray-500">
+      <p className="text-xs text-gray-500 dark:text-gray-400">
         Dozwolone formaty: JPG, PNG, GIF, WebP. Maksymalny rozmiar: 5MB na zdjęcie.
         {pasteSupported && " Możesz też wkleić zdjęcie ze schowka (Ctrl+V)."}
       </p>

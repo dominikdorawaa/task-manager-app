@@ -95,7 +95,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
-      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-sm sm:max-w-lg max-h-[90vh] sm:max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-[#181818] rounded-lg shadow-xl w-full max-w-sm sm:max-w-lg max-h-[90vh] sm:max-h-[90vh] overflow-y-auto border dark:border-[#404040]">
         <div className="p-3 sm:p-6">
           <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-4 sm:mb-6">
             {task ? 'Edytuj zadanie' : 'Nowe zadanie'}
@@ -217,13 +217,13 @@ const TaskForm: React.FC<TaskFormProps> = ({
                   {tags.map((tag, index) => (
                     <span
                       key={index}
-                      className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
+                      className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 text-sm rounded-full border border-blue-200 dark:border-blue-500/50"
                     >
                       {tag}
                       <button
                         type="button"
                         onClick={() => removeTag(tag)}
-                        className="text-blue-600 hover:text-blue-800"
+                        className="text-blue-600 hover:text-blue-800 dark:text-blue-300 dark:hover:text-blue-100"
                       >
                         <X size={12} />
                       </button>

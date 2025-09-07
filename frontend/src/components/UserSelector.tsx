@@ -89,28 +89,28 @@ const UserSelector: React.FC<UserSelectorProps> = ({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-3 py-2 text-left bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex items-center justify-between"
+        className="w-full px-3 py-2 text-left bg-white dark:bg-[#181818] border border-gray-300 dark:border-[#404040] rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex items-center justify-between text-gray-900 dark:text-white"
       >
         <div className="flex items-center">
           {selectedUser ? (
             <>
-              <UserIcon size={16} className="mr-2 text-gray-400" />
-              <span className="text-gray-900">{selectedUser.name}</span>
-              <span className="ml-2 text-sm text-gray-500">({selectedUser.email})</span>
+              <UserIcon size={16} className="mr-2 text-gray-400 dark:text-gray-500" />
+              <span className="text-gray-900 dark:text-white">{selectedUser.name}</span>
+              <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">({selectedUser.email})</span>
             </>
           ) : isCustomValue ? (
             <>
-              <UserIcon size={16} className="mr-2 text-gray-400" />
-              <span className="text-gray-900">{value}</span>
-              <span className="ml-2 text-sm text-blue-500">
+              <UserIcon size={16} className="mr-2 text-gray-400 dark:text-gray-500" />
+              <span className="text-gray-900 dark:text-white">{value}</span>
+              <span className="ml-2 text-sm text-blue-500 dark:text-blue-400">
                 {value?.includes('@') ? '(email)' : '(ID)'}
               </span>
             </>
           ) : (
-            <span className="text-gray-500">{placeholder}</span>
+            <span className="text-gray-500 dark:text-gray-400">{placeholder}</span>
           )}
         </div>
-        <ChevronDown size={16} className="text-gray-400" />
+        <ChevronDown size={16} className="text-gray-400 dark:text-gray-500" />
       </button>
 
       {isOpen && (
@@ -122,33 +122,33 @@ const UserSelector: React.FC<UserSelectorProps> = ({
           />
           
           {/* Dropdown */}
-          <div className="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+          <div className="absolute z-20 w-full mt-1 bg-white dark:bg-[#181818] border border-gray-300 dark:border-[#404040] rounded-md shadow-lg max-h-60 overflow-auto">
             {loading ? (
-              <div className="px-3 py-2 text-sm text-gray-500">
+              <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
                 Ładowanie użytkowników...
               </div>
             ) : (
               <>
                 {/* Pole wpisywania ID */}
-                <div className="p-2 border-b border-gray-200">
+                <div className="p-2 border-b border-gray-200 dark:border-[#404040]">
                   <div className="space-y-2">
                     <input
                       type="text"
                       placeholder="Wpisz ID użytkownika (np. user_2abc3def4)..."
                       value={customInput}
                       onChange={(e) => setCustomInput(e.target.value)}
-                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-[#404040] rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-[#212121] text-gray-900 dark:text-white"
                       onClick={(e) => e.stopPropagation()}
                       onKeyPress={(e) => e.key === 'Enter' && handleCustomSubmit()}
                     />
-                    <div className="text-xs text-gray-500 mt-1">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       💡 <strong>Wskazówka:</strong> ID użytkownika znajdziesz w sekcji "Twoje ID" na górze strony. Możesz dodać nazwę w nawiasie dla łatwiejszej identyfikacji.
                     </div>
                     <button
                       type="button"
                       onClick={handleCustomSubmit}
                       disabled={!customInput.trim()}
-                      className="w-full px-2 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                      className="w-full px-2 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed"
                     >
                       Przypisz
                     </button>
@@ -159,25 +159,25 @@ const UserSelector: React.FC<UserSelectorProps> = ({
                 <button
                   type="button"
                   onClick={() => handleSelect(undefined)}
-                  className={`w-full px-3 py-2 text-left hover:bg-gray-100 flex items-center ${
-                    !value ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                  className={`w-full px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-[#2a2a2a] flex items-center ${
+                    !value ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'
                   }`}
                 >
-                  <UserIcon size={16} className="mr-2 text-gray-400" />
+                  <UserIcon size={16} className="mr-2 text-gray-400 dark:text-gray-500" />
                   <span>Brak przypisania</span>
                 </button>
 
                 {/* Wcześniej przypisani użytkownicy */}
                 {assignedUsers.length > 0 && (
                   <>
-                    <div className="px-3 py-2 text-xs font-medium text-gray-500 border-t border-gray-200">
+                    <div className="px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-[#404040]">
                       Wcześniej przypisani:
                     </div>
                     {assignedUsers.map((user) => (
                       <div
                         key={user.id}
-                        className={`flex items-center px-3 py-2 hover:bg-gray-100 ${
-                          value === user.id ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                        className={`flex items-center px-3 py-2 hover:bg-gray-100 dark:hover:bg-[#2a2a2a] ${
+                          value === user.id ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'
                         }`}
                       >
                         <button
@@ -185,10 +185,10 @@ const UserSelector: React.FC<UserSelectorProps> = ({
                           onClick={() => handleSelect(user.id)}
                           className="flex items-center flex-1 text-left"
                         >
-                          <UserIcon size={16} className="mr-2 text-gray-400" />
+                          <UserIcon size={16} className="mr-2 text-gray-400 dark:text-gray-500" />
                           <div>
                             <div className="font-medium">{user.name}</div>
-                            <div className="text-sm text-gray-500">{user.id}</div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">{user.id}</div>
                           </div>
                         </button>
                         {onRemoveAssignedUser && (
@@ -198,7 +198,7 @@ const UserSelector: React.FC<UserSelectorProps> = ({
                               e.stopPropagation();
                               onRemoveAssignedUser(user.id);
                             }}
-                            className="ml-2 p-1 text-gray-400 hover:text-red-600 transition-colors"
+                            className="ml-2 p-1 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                             title="Usuń z listy"
                           >
                             <X size={14} />

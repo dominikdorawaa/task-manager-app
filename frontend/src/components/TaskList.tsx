@@ -76,17 +76,99 @@ const TaskList: React.FC<TaskListProps> = ({
   if (tasks.length === 0) {
     return (
       <div className="text-center py-12">
-        <div className="text-gray-400 text-lg mb-2">Brak zadań</div>
-        <p className="text-gray-500">Utwórz swoje pierwsze zadanie, aby rozpocząć!</p>
+        <div className="text-gray-400 dark:text-gray-300 text-lg mb-2">Brak zadań</div>
+        <p className="text-gray-500 dark:text-gray-400">Utwórz swoje pierwsze zadanie, aby rozpocząć!</p>
       </div>
     );
   }
 
-  if (filteredTasks.length === 0) {
+  if (filteredTasks.length === 0 && tasks.length > 0) {
     return (
-      <div className="text-center py-12">
-        <div className="text-gray-400 text-lg mb-2">Nie znaleziono zadań</div>
-        <p className="text-gray-500">Spróbuj zmienić filtry lub wyszukiwanie.</p>
+      <div className="space-y-6">
+        {/* Filtry i wyszukiwanie - zawsze widoczne */}
+        <div className="card">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Wyszukiwanie */}
+            <div className="relative sm:col-span-2 lg:col-span-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+              <input
+                type="text"
+                placeholder="Wyszukaj zadania..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="input pl-10"
+              />
+            </div>
+
+            {/* Filtr statusu */}
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="input"
+            >
+              <option value="">Wszystkie statusy</option>
+              <option value="do zrobienia">Do zrobienia</option>
+              <option value="w trakcie">W trakcie</option>
+              <option value="zakończone">Zakończone</option>
+              <option value="anulowane">Anulowane</option>
+            </select>
+
+            {/* Filtr priorytetu */}
+            <select
+              value={priorityFilter}
+              onChange={(e) => setPriorityFilter(e.target.value)}
+              className="input"
+            >
+              <option value="">Wszystkie priorytety</option>
+              <option value="niski">Niski</option>
+              <option value="średni">Średni</option>
+              <option value="wysoki">Wysoki</option>
+              <option value="krytyczny">Krytyczny</option>
+            </select>
+
+            {/* Sortowanie */}
+            <div className="flex gap-2">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="input flex-1"
+              >
+                <option value="createdAt">Data utworzenia</option>
+                <option value="dueDate">Data termin</option>
+                <option value="priority">Priorytet</option>
+                <option value="title">Tytuł</option>
+              </select>
+              <button
+                onClick={toggleSortOrder}
+                className="btn btn-secondary px-3"
+                title={sortOrder === 'asc' ? 'Sortuj malejąco' : 'Sortuj rosnąco'}
+              >
+                {sortOrder === 'asc' ? <SortAsc size={16} /> : <SortDesc size={16} />}
+              </button>
+            </div>
+          </div>
+
+          {/* Liczba wyników */}
+          <div className="mt-4 text-sm text-gray-500 dark:text-gray-400">
+            Znaleziono {filteredTasks.length} z {tasks.length} zadań
+          </div>
+        </div>
+
+        {/* Komunikat o braku wyników */}
+        <div className="text-center py-12">
+          <div className="text-gray-400 dark:text-gray-300 text-lg mb-2">Nie znaleziono zadań</div>
+          <p className="text-gray-500 dark:text-gray-400">Spróbuj zmienić filtry lub wyszukiwanie.</p>
+          <button
+            onClick={() => {
+              setSearchTerm('');
+              setStatusFilter('');
+              setPriorityFilter('');
+            }}
+            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 transition-colors"
+          >
+            Wyczyść filtry
+          </button>
+        </div>
       </div>
     );
   }
@@ -157,7 +239,7 @@ const TaskList: React.FC<TaskListProps> = ({
         </div>
 
         {/* Liczba wyników */}
-        <div className="mt-4 text-sm text-gray-500">
+        <div className="mt-4 text-sm text-gray-500 dark:text-gray-400">
           Znaleziono {filteredTasks.length} z {tasks.length} zadań
         </div>
       </div>

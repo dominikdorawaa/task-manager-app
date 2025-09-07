@@ -363,15 +363,15 @@ const Dashboard: React.FC = () => {
   // Jeśli użytkownik nie jest zalogowany
   if (!isSignedIn) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-[#212121] flex items-center justify-center">
         <div className="max-w-md w-full text-center px-4">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Zarządzanie Zadaniami</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Taskyy</h1>
           <p className="text-gray-600 dark:text-gray-300 mb-8">
             Zaloguj się, aby zobaczyć i zarządzać swoimi zadaniami
           </p>
-          <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow border border-gray-200 dark:border-gray-800">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow border border-gray-200 dark:border-white">
             <SignInButton mode="modal">
-              <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
+              <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors border border-blue-500">
                 Zaloguj się
               </button>
             </SignInButton>
@@ -385,7 +385,7 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-black">
+    <div className="min-h-screen bg-gray-50 dark:bg-[#212121]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
 
@@ -393,16 +393,16 @@ const Dashboard: React.FC = () => {
 <div className="mb-8">
   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
     <div className="flex-1">
-      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Zarządzanie Zadaniami</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Taskyy</h1>
       <p className="text-gray-600 dark:text-gray-300 mt-1 text-sm sm:text-base">Organizuj swoje zadania w prosty i efektywny sposób</p>
       
       {/* ID użytkownika */}
       {user && (
-        <div className="mt-4 p-3 sm:p-4 bg-blue-50 dark:bg-gray-800 border border-blue-200 dark:border-gray-700 rounded-lg">
+        <div className="mt-4 p-3 sm:p-4 bg-blue-50 dark:bg-[#181818] border border-blue-200 dark:border-[#404040] rounded-lg">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex flex-col space-y-2">
-              <span className="text-sm font-medium text-blue-900 dark:text-blue-300">Twoje ID:</span>
-              <code className="bg-blue-100 dark:bg-gray-700 px-3 py-2 rounded text-sm font-mono text-gray-900 dark:text-gray-100 break-all">
+              <span className="text-sm font-medium text-blue-900 dark:text-blue-400">Twoje ID:</span>
+              <code className="bg-blue-100 dark:bg-[#212121] border border-white dark:border-[#404040] px-3 py-2 rounded text-sm font-mono text-gray-900 dark:text-white break-all">
                 {user.id} ({user.fullName || user.primaryEmailAddress?.emailAddress || 'Brak nazwy'})
               </code>
             </div>
@@ -412,10 +412,10 @@ const Dashboard: React.FC = () => {
                 setCopyAnimation(true);
                 setTimeout(() => setCopyAnimation(false), 1000);
               }}
-              className={`px-4 py-2 text-sm font-medium transition-all duration-300 rounded-lg ${
+              className={`px-4 py-2 text-sm font-medium transition-all duration-300 rounded-lg border ${
                 copyAnimation 
-                  ? 'text-green-600 bg-green-100 scale-105' 
-                  : 'text-blue-600 bg-blue-100 hover:bg-blue-200'
+                  ? 'text-blue-600 bg-blue-100 border-blue-300 scale-105' 
+                  : 'text-blue-600 bg-blue-100 border-blue-200 hover:bg-blue-200 dark:text-blue-300 dark:bg-[#212121] dark:border-[#404040] dark:hover:bg-[#2a2a2a]'
               }`}
               title="Kopiuj ID"
             >
@@ -433,7 +433,7 @@ const Dashboard: React.FC = () => {
     <div className="flex-shrink-0">
       <button
         onClick={openNewTaskForm}
-        className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded flex items-center justify-center gap-2 text-sm sm:text-base"
+        className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded flex items-center justify-center gap-2 text-sm sm:text-base border border-blue-500"
       >
         <Plus size={18} className="sm:w-5 sm:h-5" />
         <span className="hidden xs:inline">Nowe zadanie</span>
@@ -464,20 +464,20 @@ const Dashboard: React.FC = () => {
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setTaskCategory('all')}
-              className={`px-3 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base ${
+              className={`px-3 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base border ${
                 taskCategory === 'all'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700'
+                  ? 'bg-blue-500 text-white border-blue-600'
+                  : 'bg-gray-200 dark:bg-[#181818] text-gray-700 dark:text-white hover:bg-gray-300 dark:hover:bg-[#2a2a2a] border-gray-300 dark:border-[#404040]'
               }`}
             >
               Wszystkie ({tasks.length})
             </button>
             <button
               onClick={() => setTaskCategory('my')}
-              className={`px-3 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base ${
+              className={`px-3 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base border ${
                 taskCategory === 'my'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700'
+                  ? 'bg-blue-500 text-white border-blue-600'
+                  : 'bg-gray-200 dark:bg-[#181818] text-gray-700 dark:text-white hover:bg-gray-300 dark:hover:bg-[#2a2a2a] border-gray-300 dark:border-[#404040]'
               }`}
             >
               <span className="hidden sm:inline">Utworzone przeze mnie</span>
@@ -485,10 +485,10 @@ const Dashboard: React.FC = () => {
             </button>
             <button
               onClick={() => setTaskCategory('assigned')}
-              className={`px-3 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base ${
+              className={`px-3 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base border ${
                 taskCategory === 'assigned'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700'
+                  ? 'bg-blue-500 text-white border-blue-600'
+                  : 'bg-gray-200 dark:bg-[#181818] text-gray-700 dark:text-white hover:bg-gray-300 dark:hover:bg-[#2a2a2a] border-gray-300 dark:border-[#404040]'
               }`}
             >
               <span className="hidden sm:inline">Przypisane do mnie</span>
@@ -496,10 +496,10 @@ const Dashboard: React.FC = () => {
             </button>
             <button
               onClick={() => setTaskCategory('assigned-to-users')}
-              className={`px-3 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base ${
+              className={`px-3 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base border ${
                 taskCategory === 'assigned-to-users'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700'
+                  ? 'bg-blue-500 text-white border-blue-600'
+                  : 'bg-gray-200 dark:bg-[#181818] text-gray-700 dark:text-white hover:bg-gray-300 dark:hover:bg-[#2a2a2a] border-gray-300 dark:border-[#404040]'
               }`}
             >
               <span className="hidden sm:inline">Przypisane do użytkowników</span>
@@ -520,7 +520,7 @@ const Dashboard: React.FC = () => {
               {assignedByFilter && (
                 <button
                   onClick={() => setAssignedByFilter(null)}
-                  className="text-xs text-blue-600 hover:text-blue-800"
+                  className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
                 >
                   Pokaż wszystkie
                 </button>
@@ -529,10 +529,10 @@ const Dashboard: React.FC = () => {
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setAssignedByFilter(null)}
-                className={`px-3 py-1 text-sm rounded-full transition-colors ${
+                className={`px-3 py-1 text-sm rounded-full transition-colors border ${
                   !assignedByFilter
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? 'bg-blue-500 text-white border-blue-600'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-300 dark:bg-[#181818] dark:text-white dark:border-[#404040] dark:hover:bg-[#2a2a2a]'
                 }`}
               >
                 Wszystkie
@@ -544,10 +544,10 @@ const Dashboard: React.FC = () => {
                 <button
                   key={user.id}
                   onClick={() => setAssignedByFilter(assignedByFilter === user.id ? null : user.id)}
-                  className={`px-3 py-1 text-sm rounded-full transition-colors ${
+                  className={`px-3 py-1 text-sm rounded-full transition-colors border ${
                     assignedByFilter === user.id
-                      ? 'bg-green-500 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      ? 'bg-blue-500 text-white border-blue-600'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-300 dark:bg-[#181818] dark:text-white dark:border-[#404040] dark:hover:bg-[#2a2a2a]'
                   }`}
                 >
                   {user.name}
