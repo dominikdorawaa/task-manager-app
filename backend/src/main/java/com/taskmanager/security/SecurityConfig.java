@@ -54,7 +54,9 @@ public class SecurityConfig {
             "http://localhost:3000", 
             "http://127.0.0.1:3000",
             "https://task-manager-app-frontend-etbx.onrender.com",
-            "https://*.onrender.com"
+            "https://*.onrender.com",
+            "https://taskyy.app",
+            "https://*.taskyy.app"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
