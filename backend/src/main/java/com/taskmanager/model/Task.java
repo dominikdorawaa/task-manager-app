@@ -64,6 +64,19 @@ public class Task {
     @Column(name = "images", columnDefinition = "text")
     private String images;
 
+    // Pola dla systemu udostępniania
+    @Column(name = "shared_with", columnDefinition = "text")
+    private String sharedWith; // JSON array z ID użytkowników
+
+    @Column(name = "share_requests", columnDefinition = "text")
+    private String shareRequests; // JSON array z ID użytkowników
+
+    @Column(name = "is_public")
+    private Boolean isPublic = false;
+
+    @Column(name = "is_shared_with_me")
+    private Boolean isSharedWithMe = false;
+
     // Pola dla frontendu
     public String getUserId() {
         return user != null ? user.getId().toString() : null;
@@ -136,6 +149,60 @@ public class Task {
                 this.images = mapper.writeValueAsString(imagesArray);
             } catch (Exception e) {
                 this.images = null;
+            }
+        }
+    }
+
+    // Parsowanie sharedWith JSON
+    @JsonProperty("sharedWith")
+    public String[] getSharedWith() {
+        if (sharedWith == null || sharedWith.trim().isEmpty()) {
+            return new String[0];
+        }
+        try {
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            return mapper.readValue(sharedWith, String[].class);
+        } catch (Exception e) {
+            return new String[0];
+        }
+    }
+
+    public void setSharedWith(String[] sharedWithArray) {
+        if (sharedWithArray == null || sharedWithArray.length == 0) {
+            this.sharedWith = null;
+        } else {
+            try {
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                this.sharedWith = mapper.writeValueAsString(sharedWithArray);
+            } catch (Exception e) {
+                this.sharedWith = null;
+            }
+        }
+    }
+
+    // Parsowanie shareRequests JSON
+    @JsonProperty("shareRequests")
+    public String[] getShareRequests() {
+        if (shareRequests == null || shareRequests.trim().isEmpty()) {
+            return new String[0];
+        }
+        try {
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            return mapper.readValue(shareRequests, String[].class);
+        } catch (Exception e) {
+            return new String[0];
+        }
+    }
+
+    public void setShareRequests(String[] shareRequestsArray) {
+        if (shareRequestsArray == null || shareRequestsArray.length == 0) {
+            this.shareRequests = null;
+        } else {
+            try {
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                this.shareRequests = mapper.writeValueAsString(shareRequestsArray);
+            } catch (Exception e) {
+                this.shareRequests = null;
             }
         }
     }

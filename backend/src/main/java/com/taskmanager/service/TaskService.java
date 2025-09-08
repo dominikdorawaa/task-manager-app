@@ -210,4 +210,34 @@ public class TaskService {
         return taskRepository.save(task);
     }
 
+    @Transactional
+    public Task shareTask(Long taskId, List<String> userIds, String clerkUserId) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Task not found"));
+
+        // Sprawdź czy użytkownik ma prawo do udostępniania tego zadania
+        if (!task.getClerkUserId().equals(clerkUserId)) {
+            throw new RuntimeException("Nie masz uprawnień do udostępniania tego zadania");
+        }
+
+        // Pobierz obecną listę udostępnionych użytkowników
+        String[] currentSharedWith = task.getSharedWith();
+        List<String> sharedWithList = new ArrayList<>();
+        if (currentSharedWith != null) {
+            sharedWithList.addAll(java.util.Arrays.asList(currentSharedWith));
+        }
+
+        // Dodaj nowych użytkowników (bez duplikatów)
+        for (String userId : userIds) {
+            if (!sharedWithList.contains(userId)) {
+                sharedWithList.add(userId);
+            }
+        }
+
+        // Ustaw zaktualizowaną listę
+        task.setSharedWith(sharedWithList.toArray(new String[0]));
+
+        return taskRepository.save(task);
+    }
+
 }

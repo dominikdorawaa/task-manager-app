@@ -119,4 +119,46 @@ public class TaskController {
         return ResponseEntity.ok(stats);
     }
 
+    @PostMapping("/{taskId}/share")
+    public ResponseEntity<Map<String, Object>> shareTask(
+            @PathVariable Long taskId,
+            @RequestBody Map<String, Object> request,
+            Authentication authentication) {
+        
+        if (authentication == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        String clerkUserId = authentication.getName();
+        @SuppressWarnings("unchecked")
+        java.util.List<String> userIds = (java.util.List<String>) request.get("userIds");
+        String message = (String) request.get("message");
+
+        System.out.println("=== SHARE TASK DEBUG ===");
+        System.out.println("Task ID: " + taskId);
+        System.out.println("User IDs: " + userIds);
+        System.out.println("Message: " + message);
+        System.out.println("Clerk User ID: " + clerkUserId);
+
+        try {
+            Task sharedTask = taskService.shareTask(taskId, userIds, clerkUserId);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Zadanie zostało udostępnione");
+            response.put("task", sharedTask);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            System.out.println("Error sharing task: " + e.getMessage());
+            e.printStackTrace();
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "Błąd podczas udostępniania zadania: " + e.getMessage());
+            
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
 }
