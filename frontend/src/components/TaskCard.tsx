@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Task } from '../types';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
@@ -11,7 +11,10 @@ import {
   Clock, 
   AlertCircle,
   Image as ImageIcon,
-  User as UserIcon
+  User as UserIcon,
+  Share2,
+  CheckSquare,
+  Square
 } from 'lucide-react';
 import clsx from 'clsx';
 import { filesApi } from '../services/api';
@@ -22,6 +25,10 @@ interface TaskCardProps {
   onEdit: (task: Task) => void;
   onDelete: (taskId: string) => void;
   onStatusChange: (taskId: string, status: Task['status']) => void;
+  onView: (task: Task) => void;
+  onShare?: (task: Task) => void;
+  onTaskSelection?: (taskId: string) => void;
+  isSelected?: boolean;
   getUserName: (userId: string) => string;
 }
 
@@ -30,10 +37,17 @@ const TaskCard: React.FC<TaskCardProps> = ({
   onEdit, 
   onDelete, 
   onStatusChange,
+  onView,
+  onShare,
+  onTaskSelection,
+  isSelected = false,
   getUserName
 }) => {
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [imageErrors, setImageErrors] = useState<Set<number>>(new Set());
+  const [imageRetries, setImageRetries] = useState<Map<number, number>>(new Map());
+  const imageClickRef = useRef(false);
   
   const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'zakończone';
   
@@ -64,6 +78,46 @@ const TaskCard: React.FC<TaskCardProps> = ({
   const closeImageModal = () => {
     setIsImageModalOpen(false);
   };
+
+  const handleCardClick = () => {
+    if (!imageClickRef.current) {
+      onView(task);
+    }
+    imageClickRef.current = false;
+  };
+
+  const handleImageClick = (index: number) => {
+    imageClickRef.current = true;
+    openImageModal(index);
+  };
+
+  const handleImageError = (index: number) => {
+    const currentRetries = imageRetries.get(index) || 0;
+    
+    if (currentRetries < 3) {
+      // Retry loading the image
+      setTimeout(() => {
+        setImageRetries(prev => new Map(prev.set(index, currentRetries + 1)));
+        setImageErrors(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(index);
+          return newSet;
+        });
+      }, 1000 * (currentRetries + 1)); // Exponential backoff
+    } else {
+      // Mark as permanently failed
+      setImageErrors(prev => new Set(prev.add(index)));
+    }
+  };
+
+  const retryImage = (index: number) => {
+    setImageErrors(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(index);
+      return newSet;
+    });
+    setImageRetries(prev => new Map(prev.set(index, 0)));
+  };
   
   const getPriorityColor = (priority: Task['priority']) => {
     switch (priority) {
@@ -85,21 +139,53 @@ const TaskCard: React.FC<TaskCardProps> = ({
   };
 
   return (
-    <div className={clsx(
-      "card hover:shadow-md transition-shadow duration-200 border dark:border-[#404040]",
-      isOverdue && "border-red-300 bg-red-50 dark:border-red-500/50 dark:bg-red-900/20",
-      task.priority === 'krytyczny' && "border-red-300 bg-red-50 dark:border-red-500/50 dark:bg-red-900/20",
-      task.status === 'zakończone' && "border-green-300 bg-green-50 dark:border-green-500/50 dark:bg-green-900/20",
-      task.isAssignedToMe && task.priority !== 'krytyczny' && task.status !== 'zakończone' && "border-blue-300 bg-blue-50 dark:border-blue-500/50 dark:bg-blue-900/20"
-    )}>
-      {/* Etykieta dla zadań przypisanych */}
-      {task.isAssignedToMe && (
-        <div className="mb-2">
+    <div 
+      className={clsx(
+        "card hover:shadow-md transition-shadow duration-200 border dark:border-[#404040] cursor-pointer relative",
+        isOverdue && "border-red-300 bg-red-50 dark:border-red-500/50 dark:bg-red-900/20",
+        task.priority === 'krytyczny' && "border-red-300 bg-red-50 dark:border-red-500/50 dark:bg-red-900/20",
+        task.status === 'zakończone' && "border-green-300 bg-green-50 dark:border-green-500/50 dark:bg-green-900/20",
+        task.isAssignedToMe && task.priority !== 'krytyczny' && task.status !== 'zakończone' && "border-blue-300 bg-blue-50 dark:border-blue-500/50 dark:bg-blue-900/20"
+      )}
+      onClick={handleCardClick}
+    >
+      {/* Checkbox dla zaznaczania (tylko gdy jest włączony tryb zaznaczania) */}
+      {onTaskSelection && task.isCreatedByMe && (
+        <div className="absolute top-1 right-2 z-10 m-0">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onTaskSelection(task._id);
+            }}
+            className="p-1 hover:bg-gray-100 dark:hover:bg-[#2a2a2a] rounded-lg transition-colors shadow-sm border border-gray-200 dark:border-[#404040] bg-white dark:bg-[#212121]"
+          >
+            {isSelected ? (
+              <CheckSquare size={20} className="text-blue-600 dark:text-blue-400" />
+            ) : (
+              <Square size={20} className="text-gray-400 dark:text-gray-500" />
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* Etykiety dla zadań */}
+      <div className="mb-2 flex flex-wrap gap-2">
+        {task.isAssignedToMe && (
           <span className="inline-block px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 rounded-full border border-blue-200 dark:border-blue-500/50">
             Przypisane do mnie
           </span>
-        </div>
-      )}
+        )}
+        {task.isSharedWithMe && (
+          <span className="inline-block px-2 py-1 text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 rounded-full border border-green-200 dark:border-green-500/50">
+            Udostępnione przez {getUserName(task.clerkUserId)}
+          </span>
+        )}
+        {task.sharedWith && task.sharedWith.length > 0 && (
+          <span className="inline-block px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 rounded-full border border-purple-200 dark:border-purple-500/50">
+            Udostępnione ({task.sharedWith.length})
+          </span>
+        )}
+      </div>
       
       <div className="flex justify-between items-start mb-4">
         <div className="flex-1">
@@ -107,7 +193,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
             {task.title}
           </h3>
           {task.description && (
-            <p className="text-gray-600 dark:text-gray-300 text-sm mb-3 line-clamp-2">
+            <p className="text-gray-600 dark:text-gray-300 text-sm mb-3 line-clamp-3">
               {task.description}
             </p>
           )}
@@ -115,19 +201,32 @@ const TaskCard: React.FC<TaskCardProps> = ({
         
         <div className="flex items-center space-x-2 ml-4">
           <button
-            onClick={() => onEdit(task)}
-            disabled={task.isAssignedToMe && !task.isCreatedByMe}
-            className={`p-1 transition-colors ${
-              task.isAssignedToMe && !task.isCreatedByMe
-                ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed' 
-                : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
-            }`}
-            title={task.isAssignedToMe && !task.isCreatedByMe ? "Nie możesz edytować zadań przypisanych przez innych" : "Edytuj zadanie"}
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(task);
+            }}
+            className="p-1 transition-colors text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
+            title={task.isAssignedToMe && !task.isCreatedByMe ? "Edytuj status zadania" : "Edytuj zadanie"}
           >
             <Edit size={16} />
           </button>
+          {onShare && task.isCreatedByMe && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onShare(task);
+              }}
+              className="p-1 transition-colors text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400"
+              title="Udostępnij zadanie"
+            >
+              <Share2 size={16} />
+            </button>
+          )}
           <button
-            onClick={() => onDelete(task._id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(task._id);
+            }}
             disabled={task.isAssignedToMe && !task.isCreatedByMe}
             className={`p-1 transition-colors ${
               task.isAssignedToMe && !task.isCreatedByMe
@@ -215,29 +314,59 @@ const TaskCard: React.FC<TaskCardProps> = ({
           return null;
         })()}
         {task.images && task.images.length > 0 && (
-          <div className="space-y-2">
+          <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
               <ImageIcon size={14} className="mr-2" />
               <span>Zdjęcia ({task.images.length})</span>
             </div>
-            <div className="grid grid-cols-3 gap-2">
-              {task.images.slice(0, 3).map((image, index) => (
-                <img
-                  key={index}
-                  src={filesApi.getImageUrl(image)}
-                  alt={`Zdjęcie ${index + 1}`}
-                  className="w-full h-16 object-cover rounded border border-gray-200 dark:border-white cursor-pointer hover:opacity-80 transition-opacity"
-                  onClick={() => openImageModal(index)}
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                  }}
-                />
-              ))}
+            <div className="grid grid-cols-3 gap-2 cursor-default">
+              {task.images.slice(0, 3).map((image, index) => {
+                const hasError = imageErrors.has(index);
+                const retryCount = imageRetries.get(index) || 0;
+                
+                return (
+                  <div key={index} className="relative w-full h-16">
+                    {hasError ? (
+                      <div 
+                        className="w-full h-16 bg-gray-100 dark:bg-[#212121] rounded border border-gray-200 dark:border-[#404040] flex flex-col items-center justify-center text-xs text-gray-500 dark:text-gray-300 cursor-pointer hover:bg-gray-200 dark:hover:bg-[#2a2a2a] transition-colors"
+                        onClick={() => retryImage(index)}
+                        title="Kliknij aby spróbować ponownie"
+                      >
+                        <div className="text-center">
+                          <div className="text-red-500 mb-1">⚠️</div>
+                          <div className="text-xs">Błąd ładowania</div>
+                          <div className="text-xs opacity-75">Kliknij aby spróbować</div>
+                        </div>
+                      </div>
+                    ) : (
+                      <img
+                        src={filesApi.getImageUrl(image)}
+                        alt={`Zdjęcie ${index + 1}`}
+                        className="w-full h-16 object-cover rounded border border-gray-200 dark:border-white cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => handleImageClick(index)}
+                        onError={() => handleImageError(index)}
+                        onLoad={() => {
+                          // Clear any previous errors when image loads successfully
+                          setImageErrors(prev => {
+                            const newSet = new Set(prev);
+                            newSet.delete(index);
+                            return newSet;
+                          });
+                        }}
+                      />
+                    )}
+                    {retryCount > 0 && !hasError && (
+                      <div className="absolute top-1 right-1 bg-blue-500 text-white text-xs px-1 rounded">
+                        {retryCount}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
               {task.images.length > 3 && (
                 <div 
                   className="w-full h-16 bg-gray-100 dark:bg-[#212121] rounded border border-gray-200 dark:border-[#404040] flex items-center justify-center text-xs text-gray-500 dark:text-gray-300 cursor-pointer hover:bg-gray-200 dark:hover:bg-[#2a2a2a] transition-colors"
-                  onClick={() => openImageModal(0)}
+                  onClick={() => handleImageClick(0)}
                 >
                   +{task.images.length - 3} więcej
                 </div>
@@ -248,7 +377,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
         {/* Data utworzenia */}
         <div className="text-xs text-gray-400 dark:text-gray-500 pt-2 border-t border-gray-100 dark:border-gray-700">
-          Utworzono: {format(new Date(task.createdAt), 'dd.MM.yyyy HH:mm', { locale: pl })}
+          Utworzono: {new Date(task.createdAt).toLocaleString('pl-PL', { timeZone: 'Europe/Warsaw' })}
         </div>
       </div>
       

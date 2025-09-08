@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { X, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 
 interface ImageModalProps {
   isOpen: boolean;
@@ -16,6 +16,8 @@ const ImageModal: React.FC<ImageModalProps> = ({
   currentIndex,
   onIndexChange,
 }) => {
+  const [imageErrors, setImageErrors] = useState<Set<number>>(new Set());
+  const [imageRetries, setImageRetries] = useState<Map<number, number>>(new Map());
   // Obsługa klawiatury
   useEffect(() => {
     if (!isOpen) return;
@@ -60,6 +62,34 @@ const ImageModal: React.FC<ImageModalProps> = ({
     }
   };
 
+  const handleImageError = (index: number) => {
+    const currentRetries = imageRetries.get(index) || 0;
+    
+    if (currentRetries < 3) {
+      // Retry loading the image
+      setTimeout(() => {
+        setImageRetries(prev => new Map(prev.set(index, currentRetries + 1)));
+        setImageErrors(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(index);
+          return newSet;
+        });
+      }, 1000 * (currentRetries + 1)); // Exponential backoff
+    } else {
+      // Mark as permanently failed
+      setImageErrors(prev => new Set(prev.add(index)));
+    }
+  };
+
+  const retryImage = (index: number) => {
+    setImageErrors(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(index);
+      return newSet;
+    });
+    setImageRetries(prev => new Map(prev.set(index, 0)));
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90">
       {/* Przycisk zamknięcia */}
@@ -95,12 +125,43 @@ const ImageModal: React.FC<ImageModalProps> = ({
 
       {/* Zdjęcie */}
       <div className="max-w-full max-h-full p-8">
-        <img
-          src={currentImage}
-          alt={`Zdjęcie ${currentIndex + 1} z ${images.length}`}
-          className="max-w-full max-h-full object-contain"
-          style={{ maxHeight: '90vh' }}
-        />
+        {imageErrors.has(currentIndex) ? (
+          <div className="flex flex-col items-center justify-center text-white text-center">
+            <div className="text-6xl mb-4">⚠️</div>
+            <div className="text-xl mb-2">Błąd ładowania zdjęcia</div>
+            <div className="text-sm mb-4 opacity-75">
+              Zdjęcie nie mogło zostać załadowane. Może to być problem z połączeniem lub serwerem.
+            </div>
+            <button
+              onClick={() => retryImage(currentIndex)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+            >
+              <RefreshCw size={16} />
+              Spróbuj ponownie
+            </button>
+          </div>
+        ) : (
+          <img
+            src={currentImage}
+            alt={`Zdjęcie ${currentIndex + 1} z ${images.length}`}
+            className="max-w-full max-h-full object-contain"
+            style={{ maxHeight: '90vh' }}
+            onError={() => handleImageError(currentIndex)}
+            onLoad={() => {
+              // Clear any previous errors when image loads successfully
+              setImageErrors(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(currentIndex);
+                return newSet;
+              });
+            }}
+          />
+        )}
+        {(imageRetries.get(currentIndex) || 0) > 0 && !imageErrors.has(currentIndex) && (
+          <div className="absolute top-4 left-4 bg-blue-500 text-white text-xs px-2 py-1 rounded">
+            Próba {imageRetries.get(currentIndex) || 0}/3
+          </div>
+        )}
       </div>
 
       {/* Licznik zdjęć */}

@@ -15,6 +15,11 @@ export interface Task {
   clerkUserId: string; // ID użytkownika, który utworzył zadanie
   createdAt: string;
   updatedAt: string;
+  // Nowe pola dla systemu udostępniania (opcjonalne, nie wpływają na istniejące dane)
+  sharedWith?: string[]; // Lista ID użytkowników, którym zadanie jest udostępnione
+  shareRequests?: string[]; // Lista ID użytkowników, którzy chcą zobaczyć zadanie
+  isPublic?: boolean; // Czy zadanie jest publiczne
+  isSharedWithMe?: boolean; // Czy zadanie zostało udostępnione mi przez kogoś
 }
 
 export interface User {
@@ -82,6 +87,48 @@ export interface ApiResponse<T> {
   data?: T;
   message?: string;
   error?: string;
+}
+
+// Typy dla systemu udostępniania zadań
+export interface ShareRequest {
+  id: string;
+  taskId: string;
+  requesterId: string;
+  requesterName: string;
+  taskTitle: string;
+  createdAt: string;
+  status: 'pending' | 'approved' | 'rejected';
+}
+
+export interface ShareTaskData {
+  taskId: string;
+  userIds: string[];
+  message?: string;
+}
+
+export interface RequestAccessData {
+  taskId: string;
+  message?: string;
+}
+
+// Typy dla zarządzania użytkownikami zewnętrznymi
+export interface ExternalUser {
+  id: string;
+  name: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateExternalUserData {
+  id: string;
+  name: string;
+}
+
+export interface UpdateExternalUserData {
+  id?: string;
+  name?: string;
+  isActive?: boolean;
 }
 
 

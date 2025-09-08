@@ -38,6 +38,9 @@ export const tasksApi = {
   
   getStats: () =>
     api.get<TaskStats>('/tasks/stats/summary'),
+  
+  share: (taskId: string, userIds: string[], message?: string) =>
+    api.post(`/tasks/${taskId}/share`, { userIds, message }),
 };
 
 // API plików
@@ -68,7 +71,26 @@ export const filesApi = {
   },
 };
 
-// API użytkowników nie jest już potrzebne - Clerk obsługuje autentykację
+// API użytkowników zewnętrznych
+export const externalUsersApi = {
+  getAll: (search?: string) =>
+    api.get('/external-users', { params: { search } }),
+  
+  getActive: () =>
+    api.get('/external-users/active'),
+  
+  getById: (id: string) =>
+    api.get(`/external-users/${id}`),
+  
+  create: (userData: { id: string; name: string }) =>
+    api.post('/external-users', userData),
+  
+  update: (id: string, userData: { id?: string; name?: string; isActive?: boolean }) =>
+    api.put(`/external-users/${id}`, userData),
+  
+  delete: (id: string) =>
+    api.delete(`/external-users/${id}`),
+};
 
 export default api;
 

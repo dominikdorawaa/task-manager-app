@@ -1,20 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { useAuth, useUser, SignInButton } from '@clerk/clerk-react';
-import { tasksApi, setClerkToken } from '../services/api';
-import { Task, CreateTaskData, UpdateTaskData, BackendTaskData } from '../types';
+import { tasksApi, externalUsersApi, setClerkToken } from '../services/api';
+import { Task, CreateTaskData, UpdateTaskData, BackendTaskData, ExternalUser, CreateExternalUserData, UpdateExternalUserData } from '../types';
 import TaskList from './TaskList';
 import TaskForm from './TaskForm';
-import { Plus } from 'lucide-react';
+import TaskModal from './TaskModal';
+import ShareTaskModal from './ShareTaskModal';
+import BulkShareModal from './BulkShareModal';
+import ExternalUserManager from './ExternalUserManager';
+import ShareOptionsModal from './ShareOptionsModal';
+import { Plus, Share2, X, Users, Copy, Eye, EyeOff } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>();
-  const [taskCategory, setTaskCategory] = useState<'all' | 'my' | 'assigned' | 'assigned-to-users'>('all');
+  const [viewingTask, setViewingTask] = useState<Task | null>(null);
+  const [showTaskModal, setShowTaskModal] = useState(false);
+  const [taskCategory, setTaskCategory] = useState<'all' | 'my' | 'assigned' | 'assigned-to-users' | 'shared'>('all');
   const [assignedByFilter, setAssignedByFilter] = useState<string | null>(null);
   const [userNames, setUserNames] = useState<Record<string, string>>({});
   const [copyAnimation, setCopyAnimation] = useState(false);
+  const [showUserId, setShowUserId] = useState(false);
   const [assignedUsers, setAssignedUsers] = useState<{id: string, name: string}[]>([]);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [sharingTask, setSharingTask] = useState<Task | null>(null);
+  const [selectedTasksForBulkShare, setSelectedTasksForBulkShare] = useState<Set<string>>(new Set());
+  const [showBulkShareModal, setShowBulkShareModal] = useState(false);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [showUserManager, setShowUserManager] = useState(false);
+  const [externalUsers, setExternalUsers] = useState<ExternalUser[]>([]);
+  const [showShareOptions, setShowShareOptions] = useState(false);
   const queryClient = useQueryClient();
   const { isSignedIn, getToken } = useAuth();
   const { user } = useUser();
@@ -203,6 +219,10 @@ const Dashboard: React.FC = () => {
           return task.assignedTo !== user?.id && task.assignedTo !== user?.primaryEmailAddress?.emailAddress;
         });
         break;
+      case 'shared':
+        // Zadania udostępnione mi przez innych
+        filteredTasks = tasks.filter(task => task.isSharedWithMe);
+        break;
       default:
         filteredTasks = tasks;
     }
@@ -232,6 +252,21 @@ const Dashboard: React.FC = () => {
     }
   );
 
+  // Query do pobierania użytkowników zewnętrznych
+  const { data: externalUsersData = [], isLoading: externalUsersLoading } = useQuery<ExternalUser[], Error>(
+    ['externalUsers'],
+    () => externalUsersApi.getAll().then(res => res.data),
+    {
+      enabled: isSignedIn,
+      staleTime: 60000, // 1 minuta
+    }
+  );
+
+  // Aktualizacja external users gdy dane się zmienią
+  useEffect(() => {
+    setExternalUsers(externalUsersData);
+  }, [externalUsersData]);
+
   // Aktualizacja listy przypisanych użytkowników gdy zmieniają się zadania
   useEffect(() => {
     if (tasks.length > 0) {
@@ -257,7 +292,9 @@ const Dashboard: React.FC = () => {
     {
       onSuccess: (response) => {
         console.log('=== UPDATE TASK SUCCESS ===', response);
+        // Natychmiastowe odświeżenie danych
         queryClient.invalidateQueries(['tasks', user?.id]);
+        queryClient.refetchQueries(['tasks', user?.id]);
         setShowTaskForm(false);
         setEditingTask(undefined);
       },
@@ -359,6 +396,209 @@ const Dashboard: React.FC = () => {
     setEditingTask(undefined);
   };
 
+  const handleViewTask = (task: Task) => {
+    setViewingTask(task);
+    setShowTaskModal(true);
+  };
+
+  const closeTaskModal = () => {
+    setShowTaskModal(false);
+    setViewingTask(null);
+  };
+
+  // Funkcje dla systemu udostępniania
+  const handleShareTask = (task: Task) => {
+    setSharingTask(task);
+    setShowShareOptions(true);
+  };
+
+  const handleShareSingle = () => {
+    setShowShareOptions(false);
+    setShowShareModal(true);
+  };
+
+  const handleSelectMore = () => {
+    if (sharingTask) {
+      setShowShareOptions(false);
+      setIsSelectionMode(true);
+      setSelectedTasksForBulkShare(new Set([sharingTask._id]));
+    }
+  };
+
+  const closeShareModal = () => {
+    setShowShareModal(false);
+    setSharingTask(null);
+  };
+
+  const closeShareOptions = () => {
+    setShowShareOptions(false);
+    setSharingTask(null);
+  };
+
+  const closeBulkShareModal = () => {
+    setShowBulkShareModal(false);
+    setSelectedTasksForBulkShare(new Set());
+  };
+
+  const handleTaskSelection = (taskId: string) => {
+    setSelectedTasksForBulkShare(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(taskId)) {
+        newSet.delete(taskId);
+      } else {
+        newSet.add(taskId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleBulkShare = () => {
+    setShowBulkShareModal(true);
+  };
+
+  const exitSelectionMode = () => {
+    setIsSelectionMode(false);
+    setSelectedTasksForBulkShare(new Set());
+  };
+
+  // Funkcja udostępniania zadania
+  const handleShare = async (userIds: string[], message?: string) => {
+    if (!sharingTask) return;
+    
+    try {
+      console.log('Udostępnianie zadania:', {
+        taskId: sharingTask._id,
+        userIds,
+        message
+      });
+      
+      const response = await tasksApi.share(sharingTask._id, userIds, message);
+      
+      if (response.data.success) {
+        // Odśwież listę zadań
+        queryClient.invalidateQueries(['tasks']);
+        
+        alert(`Zadanie "${sharingTask.title}" zostało udostępnione ${userIds.length} użytkownikom!`);
+        closeShareModal();
+      } else {
+        alert(`Błąd: ${response.data.message}`);
+      }
+    } catch (error) {
+      console.error('Błąd udostępniania:', error);
+      alert('Wystąpił błąd podczas udostępniania zadania.');
+    }
+  };
+
+  const handleBulkShareAction = async (userIds: string[], message?: string) => {
+    try {
+      console.log('Masowe udostępnianie zadań:', {
+        taskIds: Array.from(selectedTasksForBulkShare),
+        userIds,
+        message
+      });
+      
+      // Udostępnij każde zadanie osobno
+      const promises = Array.from(selectedTasksForBulkShare).map(taskId => 
+        tasksApi.share(taskId, userIds, message)
+      );
+      
+      const results = await Promise.allSettled(promises);
+      
+      let successCount = 0;
+      let errorCount = 0;
+      
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled' && result.value.data.success) {
+          successCount++;
+        } else {
+          errorCount++;
+          console.error(`Błąd udostępniania zadania ${Array.from(selectedTasksForBulkShare)[index]}:`, result);
+        }
+      });
+      
+      if (successCount > 0) {
+        // Odśwież listę zadań
+        queryClient.invalidateQueries(['tasks']);
+        alert(`${successCount} zadań zostało udostępnione ${userIds.length} użytkownikom!`);
+      }
+      
+      if (errorCount > 0) {
+        alert(`${errorCount} zadań nie udało się udostępnić.`);
+      }
+      
+      closeBulkShareModal();
+      exitSelectionMode();
+    } catch (error) {
+      console.error('Błąd masowego udostępniania:', error);
+      alert('Wystąpił błąd podczas masowego udostępniania zadań.');
+    }
+  };
+
+  // Funkcje do zarządzania użytkownikami zewnętrznymi
+  const handleAddExternalUser = async (userData: CreateExternalUserData) => {
+    try {
+      console.log('Dodawanie użytkownika zewnętrznego:', userData);
+      
+      const response = await externalUsersApi.create(userData);
+      
+      if (response.data.success) {
+        // Odśwież listę użytkowników
+        queryClient.invalidateQueries(['externalUsers']);
+        alert(`Użytkownik ${userData.name} został dodany!`);
+      } else {
+        alert(`Błąd: ${response.data.message}`);
+      }
+    } catch (error) {
+      console.error('Błąd dodawania użytkownika:', error);
+      alert('Wystąpił błąd podczas dodawania użytkownika.');
+    }
+  };
+
+  const handleUpdateExternalUser = async (id: string, userData: UpdateExternalUserData) => {
+    try {
+      console.log('Aktualizacja użytkownika zewnętrznego:', { id, userData });
+      
+      const response = await externalUsersApi.update(id, userData);
+      
+      if (response.data.success) {
+        // Odśwież listę użytkowników
+        queryClient.invalidateQueries(['externalUsers']);
+        alert('Użytkownik został zaktualizowany!');
+      } else {
+        alert(`Błąd: ${response.data.message}`);
+      }
+    } catch (error) {
+      console.error('Błąd aktualizacji użytkownika:', error);
+      alert('Wystąpił błąd podczas aktualizacji użytkownika.');
+    }
+  };
+
+  const handleDeleteExternalUser = async (id: string) => {
+    const user = externalUsers.find(u => u.id === id);
+    if (!user) return;
+    
+    const confirmed = window.confirm(`Czy na pewno chcesz usunąć użytkownika "${user.name}"?`);
+    if (!confirmed) return;
+    
+    try {
+      console.log('Usuwanie użytkownika zewnętrznego:', id);
+      
+      const response = await externalUsersApi.delete(id);
+      
+      if (response.data.success) {
+        // Odśwież listę użytkowników
+        queryClient.invalidateQueries(['externalUsers']);
+        alert(`Użytkownik ${user.name} został usunięty!`);
+      } else {
+        alert(`Błąd: ${response.data.message}`);
+      }
+    } catch (error) {
+      console.error('Błąd usuwania użytkownika:', error);
+      alert('Wystąpił błąd podczas usuwania użytkownika.');
+    }
+  };
+
+
 
   // Jeśli użytkownik nie jest zalogowany
   if (!isSignedIn) {
@@ -398,39 +638,81 @@ const Dashboard: React.FC = () => {
       
       {/* ID użytkownika */}
       {user && (
-        <div className="mt-4 p-3 sm:p-4 bg-blue-50 dark:bg-[#181818] border border-blue-200 dark:border-[#404040] rounded-lg">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="flex flex-col space-y-2">
-              <span className="text-sm font-medium text-blue-900 dark:text-blue-400">Twoje ID:</span>
-              <code className="bg-blue-100 dark:bg-[#212121] border border-white dark:border-[#404040] px-3 py-2 rounded text-sm font-mono text-gray-900 dark:text-white break-all">
-                {user.id} ({user.fullName || user.primaryEmailAddress?.emailAddress || 'Brak nazwy'})
-              </code>
-            </div>
+        <div className="mt-3 p-2 bg-blue-50 dark:bg-[#181818] border border-blue-200 dark:border-[#404040] rounded-lg max-w-md">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-blue-900 dark:text-blue-400">Twoje ID:</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400 flex-1">
+              {showUserId ? user.id : '••••••••••'}
+            </span>
+            <button
+              onClick={() => setShowUserId(!showUserId)}
+              className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+              title={showUserId ? "Ukryj ID" : "Pokaż ID"}
+            >
+              {showUserId ? <EyeOff size={14} /> : <Eye size={14} />}
+            </button>
             <button
               onClick={() => {
                 navigator.clipboard.writeText(user.id);
                 setCopyAnimation(true);
                 setTimeout(() => setCopyAnimation(false), 1000);
               }}
-              className={`px-4 py-2 text-sm font-medium transition-all duration-300 rounded-lg border ${
+              className={`p-1 transition-all duration-300 ${
                 copyAnimation 
-                  ? 'text-blue-600 bg-blue-100 border-blue-300 scale-105' 
-                  : 'text-blue-600 bg-blue-100 border-blue-200 hover:bg-blue-200 dark:text-blue-300 dark:bg-[#212121] dark:border-[#404040] dark:hover:bg-[#2a2a2a]'
+                  ? 'text-green-600 scale-110' 
+                  : 'text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
               }`}
               title="Kopiuj ID"
             >
-              {copyAnimation ? '✓ Skopiowano!' : '📋 Kopiuj ID'}
+              <Copy size={14} />
             </button>
           </div>
-          <div className="text-xs text-blue-600 dark:text-blue-400 mt-3">
-            💡 Użyj tego ID do przypisywania zadań innym użytkownikom
+          <div className="mt-2 text-xs text-blue-600 dark:text-blue-400">
+            💡 Przekaż to ID osobie, która chce Ci przypisać zadanie
           </div>
         </div>
       )}
     </div>
     
-    {/* Przycisk Nowe zadanie */}
-    <div className="flex-shrink-0">
+    {/* Przyciski akcji */}
+    <div className="flex-shrink-0 flex flex-col sm:flex-row gap-2">
+      {/* Przyciski trybu zaznaczania */}
+      {isSelectionMode && (
+        <div className="flex gap-2">
+          {selectedTasksForBulkShare.size > 0 && (
+            <>
+              <button
+                onClick={handleBulkShare}
+                className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-3 rounded flex items-center gap-2 text-sm border border-green-500"
+              >
+                <Share2 size={16} />
+                <span className="hidden sm:inline">Udostępnij ({selectedTasksForBulkShare.size})</span>
+                <span className="sm:hidden">Share ({selectedTasksForBulkShare.size})</span>
+              </button>
+            </>
+          )}
+          <button
+            onClick={exitSelectionMode}
+            className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-3 rounded flex items-center gap-2 text-sm border border-red-500"
+          >
+            <X size={16} />
+            <span className="hidden sm:inline">Anuluj zaznaczanie</span>
+            <span className="sm:hidden">Anuluj</span>
+          </button>
+        </div>
+      )}
+      
+      {/* Przycisk zarządzania użytkownikami */}
+      <button
+        onClick={() => setShowUserManager(true)}
+        className="bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-3 rounded flex items-center gap-2 text-sm border border-gray-500"
+      >
+        <Users size={16} />
+        <span className="hidden sm:inline">Użytkownicy</span>
+        <span className="sm:hidden">Users</span>
+      </button>
+      
+      {/* Przycisk Nowe zadanie */}
       <button
         onClick={openNewTaskForm}
         className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded flex items-center justify-center gap-2 text-sm sm:text-base border border-blue-500"
@@ -509,6 +791,17 @@ const Dashboard: React.FC = () => {
                 return cleanAssignedTo !== user?.id && t.assignedTo !== user?.primaryEmailAddress?.emailAddress;
               }).length})
             </button>
+            <button
+              onClick={() => setTaskCategory('shared')}
+              className={`px-3 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base border ${
+                taskCategory === 'shared'
+                  ? 'bg-blue-500 text-white border-blue-600'
+                  : 'bg-gray-200 dark:bg-[#181818] text-gray-700 dark:text-white hover:bg-gray-300 dark:hover:bg-[#2a2a2a] border-gray-300 dark:border-[#404040]'
+              }`}
+            >
+              <span className="hidden sm:inline">Udostępnione mi</span>
+              <span className="sm:hidden">Udostępnione</span> ({tasks.filter(t => t.isSharedWithMe).length})
+            </button>
           </div>
         </div>
 
@@ -566,6 +859,10 @@ const Dashboard: React.FC = () => {
           onEdit={handleEditTask}
           onDelete={handleDeleteTask}
           onStatusChange={handleStatusChange}
+          onView={handleViewTask}
+          onShare={handleShareTask}
+          onTaskSelection={isSelectionMode ? handleTaskSelection : undefined}
+          selectedTasks={isSelectionMode ? selectedTasksForBulkShare : new Set()}
           isLoading={tasksLoading}
           getUserName={getUserName}
         />
@@ -579,12 +876,73 @@ const Dashboard: React.FC = () => {
               onSubmit={editingTask ? handleUpdateTask : handleCreateTask}
               onCancel={closeTaskForm}
               isLoading={createTaskMutation.isLoading || updateTaskMutation.isLoading}
-              assignedUsers={assignedUsers}
-              onRemoveAssignedUser={removeAssignedUser}
+              externalUsers={externalUsers}
+              isAssignedUser={editingTask?.isAssignedToMe && !editingTask?.isCreatedByMe}
             />
           </>
         )}
+
+        {/* Modal podglądu zadania */}
+        <TaskModal
+          isOpen={showTaskModal}
+          onClose={closeTaskModal}
+          task={viewingTask}
+          onEdit={handleEditTask}
+          onDelete={handleDeleteTask}
+          getUserName={getUserName}
+        />
       </div>
+
+      {/* Modal opcji udostępniania */}
+      {showShareOptions && sharingTask && (
+        <ShareOptionsModal
+          isOpen={showShareOptions}
+          onClose={closeShareOptions}
+          task={sharingTask}
+          onShareSingle={handleShareSingle}
+          onSelectMore={handleSelectMore}
+          hasExternalUsers={externalUsers.length > 0}
+        />
+      )}
+
+      {/* Modal udostępniania pojedynczego zadania */}
+      {showShareModal && sharingTask && (
+        <ShareTaskModal
+          isOpen={showShareModal}
+          onClose={closeShareModal}
+          task={sharingTask}
+          onShare={handleShare}
+          availableUsers={externalUsers.map(user => ({ id: user.id, name: user.name }))}
+          isLoading={false}
+        />
+      )}
+
+      {/* Modal masowego udostępniania */}
+      {showBulkShareModal && (
+        <BulkShareModal
+          isOpen={showBulkShareModal}
+          onClose={closeBulkShareModal}
+          selectedTasks={Array.from(selectedTasksForBulkShare).map(id => 
+            tasks.find(t => t._id === id)!
+          ).filter(Boolean)}
+          onShare={handleBulkShareAction}
+          availableUsers={externalUsers.map(user => ({ id: user.id, name: user.name }))}
+          isLoading={false}
+        />
+      )}
+
+      {/* Modal zarządzania użytkownikami zewnętrznymi */}
+      {showUserManager && (
+        <ExternalUserManager
+          isOpen={showUserManager}
+          onClose={() => setShowUserManager(false)}
+          users={externalUsers}
+          onAddUser={handleAddExternalUser}
+          onUpdateUser={handleUpdateExternalUser}
+          onDeleteUser={handleDeleteExternalUser}
+          isLoading={false}
+        />
+      )}
     </div>
   );
 };

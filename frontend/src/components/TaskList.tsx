@@ -8,6 +8,10 @@ interface TaskListProps {
   onEdit: (task: Task) => void;
   onDelete: (taskId: string) => void;
   onStatusChange: (taskId: string, status: Task['status']) => void;
+  onView: (task: Task) => void;
+  onShare?: (task: Task) => void;
+  onTaskSelection?: (taskId: string) => void;
+  selectedTasks?: Set<string>;
   isLoading?: boolean;
   getUserName: (userId: string) => string;
 }
@@ -17,14 +21,18 @@ const TaskList: React.FC<TaskListProps> = ({
   onEdit,
   onDelete,
   onStatusChange,
+  onView,
+  onShare,
+  onTaskSelection,
+  selectedTasks = new Set(),
   isLoading = false,
   getUserName
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [priorityFilter, setPriorityFilter] = useState<string>('');
-  const [sortBy, setSortBy] = useState<'createdAt' | 'dueDate' | 'priority' | 'title'>('createdAt');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [sortBy, setSortBy] = useState<'createdAt' | 'dueDate' | 'priority' | 'title' | 'status'>('status');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   // Filtrowanie zadań
   const filteredTasks = tasks.filter(task => {
@@ -38,6 +46,24 @@ const TaskList: React.FC<TaskListProps> = ({
 
   // Sortowanie zadań
   const sortedTasks = [...filteredTasks].sort((a, b) => {
+    // Domyślnie sortuj według statusu, a potem według daty utworzenia
+    if (sortBy === 'status') {
+      const statusOrder = { 'do zrobienia': 1, 'w trakcie': 2, 'zakończone': 3, 'anulowane': 4 };
+      const aStatusValue = statusOrder[a.status as keyof typeof statusOrder];
+      const bStatusValue = statusOrder[b.status as keyof typeof statusOrder];
+      
+      // Jeśli statusy są różne, sortuj według statusu
+      if (aStatusValue !== bStatusValue) {
+        return sortOrder === 'asc' ? aStatusValue - bStatusValue : bStatusValue - aStatusValue;
+      }
+      
+      // Jeśli statusy są takie same, sortuj według daty utworzenia (najnowsze pierwsze)
+      const aDate = new Date(a.createdAt);
+      const bDate = new Date(b.createdAt);
+      return bDate.getTime() - aDate.getTime();
+    }
+
+    // Dla innych typów sortowania używaj standardowej logiki
     let aValue: any = a[sortBy];
     let bValue: any = b[sortBy];
 
@@ -133,6 +159,7 @@ const TaskList: React.FC<TaskListProps> = ({
                 onChange={(e) => setSortBy(e.target.value as any)}
                 className="input flex-1"
               >
+                <option value="status">Status</option>
                 <option value="createdAt">Data utworzenia</option>
                 <option value="dueDate">Data termin</option>
                 <option value="priority">Priorytet</option>
@@ -223,6 +250,7 @@ const TaskList: React.FC<TaskListProps> = ({
               onChange={(e) => setSortBy(e.target.value as any)}
               className="input flex-1"
             >
+              <option value="status">Status</option>
               <option value="createdAt">Data utworzenia</option>
               <option value="dueDate">Data termin</option>
               <option value="priority">Priorytet</option>
@@ -253,6 +281,10 @@ const TaskList: React.FC<TaskListProps> = ({
             onEdit={onEdit}
             onDelete={onDelete}
             onStatusChange={onStatusChange}
+            onView={onView}
+            onShare={onShare}
+            onTaskSelection={onTaskSelection}
+            isSelected={selectedTasks.has(task._id)}
             getUserName={getUserName}
           />
         ))}
