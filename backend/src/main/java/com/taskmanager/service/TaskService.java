@@ -145,26 +145,38 @@ public class TaskService {
     }
 
     public List<Task> getTasksForClerkUser(String clerkUserId, String userEmail) {
+        System.out.println("=== GET TASKS FOR CLERK USER DEBUG ===");
+        System.out.println("clerkUserId: " + clerkUserId);
+        System.out.println("userEmail: " + userEmail);
         
         // Pobierz zadania utworzone przez użytkownika
         List<Task> createdTasks = taskRepository.findByClerkUserId(clerkUserId);
+        System.out.println("Created tasks count: " + createdTasks.size());
         
         // Pobierz zadania przypisane do użytkownika po clerkUserId (ale nie utworzone przez niego)
         // Używamy prostszej metody która obsługuje ID z nawiasami
         List<Task> assignedTasksByUserId = taskRepository.findByAssignedToContainingAndClerkUserIdNot(clerkUserId, clerkUserId);
-        
+        System.out.println("Assigned tasks by userId count: " + assignedTasksByUserId.size());
         
         // Pobierz zadania przypisane do użytkownika po emailu (ale nie utworzone przez niego)
         List<Task> assignedTasksByEmail = new ArrayList<>();
         if (userEmail != null && !userEmail.trim().isEmpty()) {
             assignedTasksByEmail = taskRepository.findByAssignedToAndClerkUserIdNot(userEmail, clerkUserId);
+            System.out.println("Assigned tasks by email count: " + assignedTasksByEmail.size());
         }
+        
+        // Pobierz zadania udostępnione użytkownikowi
+        List<Task> sharedTasks = taskRepository.findBySharedWithContainingAndClerkUserIdNot(clerkUserId, clerkUserId);
+        System.out.println("Shared tasks count: " + sharedTasks.size());
         
         // Połącz listy
         List<Task> allTasks = new ArrayList<>();
         allTasks.addAll(createdTasks);
         allTasks.addAll(assignedTasksByUserId);
         allTasks.addAll(assignedTasksByEmail);
+        allTasks.addAll(sharedTasks);
+        
+        System.out.println("Total tasks returned: " + allTasks.size());
         
         return allTasks;
     }
@@ -212,12 +224,21 @@ public class TaskService {
 
     @Transactional
     public Task shareTask(Long taskId, List<String> userIds, String clerkUserId) {
+        
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
 
+        System.out.println("Found task: " + task.getTitle());
+        System.out.println("Task clerkUserId: " + task.getClerkUserId());
+        System.out.println("Current sharedWith: " + java.util.Arrays.toString(task.getSharedWith()));
+
         // Sprawdź czy użytkownik ma prawo do udostępniania tego zadania
+        if (task.getClerkUserId() == null) {
+            throw new RuntimeException("Zadanie nie ma przypisanego właściciela");
+        }
+        
         if (!task.getClerkUserId().equals(clerkUserId)) {
-            throw new RuntimeException("Nie masz uprawnień do udostępniania tego zadania");
+            throw new RuntimeException("Nie masz uprawnień do udostępniania tego zadania. Właściciel: " + task.getClerkUserId() + ", Ty: " + clerkUserId);
         }
 
         // Pobierz obecną listę udostępnionych użytkowników
@@ -237,7 +258,21 @@ public class TaskService {
         // Ustaw zaktualizowaną listę
         task.setSharedWith(sharedWithList.toArray(new String[0]));
 
-        return taskRepository.save(task);
+        System.out.println("Updated sharedWith: " + java.util.Arrays.toString(task.getSharedWith()));
+        
+        Task savedTask = taskRepository.save(task);
+        System.out.println("Task saved successfully with ID: " + savedTask.getId());
+        System.out.println("Saved task sharedWith: " + java.util.Arrays.toString(savedTask.getSharedWith()));
+        
+        // Sprawdź czy zadanie zostało rzeczywiście zapisane w bazie
+        Task verifyTask = taskRepository.findById(taskId).orElse(null);
+        if (verifyTask != null) {
+            System.out.println("Verification - Task sharedWith in DB: " + java.util.Arrays.toString(verifyTask.getSharedWith()));
+        } else {
+            System.out.println("ERROR: Task not found in DB after save!");
+        }
+        
+        return savedTask;
     }
 
 }

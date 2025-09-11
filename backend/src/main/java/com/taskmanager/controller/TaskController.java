@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
+import jakarta.validation.Valid;
+import org.springframework.validation.BindingResult;
 
 import java.util.HashMap;
 import java.util.List;
@@ -21,10 +23,16 @@ public class TaskController {
     private final TaskService taskService;
 
     @PostMapping
-    public ResponseEntity<Task> createTask(@RequestBody CreateTaskRequest request, Authentication authentication) {
+    public ResponseEntity<?> createTask(@Valid @RequestBody CreateTaskRequest request, BindingResult bindingResult, Authentication authentication) {
         System.out.println("=== CREATE TASK DEBUG ===");
         System.out.println("Authentication: " + (authentication != null ? authentication.getName() : "NULL"));
         System.out.println("Task request: " + request);
+        System.out.println("Validation errors: " + bindingResult.getAllErrors());
+        
+        if (bindingResult.hasErrors()) {
+            System.out.println("Validation failed: " + bindingResult.getAllErrors());
+            return ResponseEntity.badRequest().body(bindingResult.getAllErrors());
+        }
         
         if (authentication == null) {
             System.out.println("Authentication is NULL - returning 401");
@@ -62,7 +70,7 @@ public class TaskController {
     @PutMapping("/{taskId}")
     public ResponseEntity<Task> updateTask(
             @PathVariable Long taskId,
-            @RequestBody UpdateTaskRequest request,
+            @Valid @RequestBody UpdateTaskRequest request,
             Authentication authentication) {
         
         System.out.println("=== UPDATE TASK DEBUG ===");

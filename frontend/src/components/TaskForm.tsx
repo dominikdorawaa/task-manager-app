@@ -71,17 +71,13 @@ const TaskForm: React.FC<TaskFormProps> = ({
   };
 
   const handleFormSubmit = (data: CreateTaskData) => {
-    console.log('=== TASK FORM SUBMIT DEBUG ===');
-    console.log('Form data:', data);
-    console.log('Tags:', tags);
-    console.log('Images:', images);
+    
     const submitData = {
       ...data,
       tags,
       images,
       assignedTo
     };
-    console.log('Final submit data:', submitData);
     onSubmit(submitData);
   };
 
@@ -109,7 +105,11 @@ const TaskForm: React.FC<TaskFormProps> = ({
                 </label>
                 <input
                   type="text"
-                  {...register('title', { required: 'Tytuł jest wymagany' })}
+                  {...register('title', { 
+                    required: 'Tytuł jest wymagany',
+                    maxLength: { value: 500, message: 'Tytuł nie może być dłuższy niż 500 znaków' }
+                  })}
+                  maxLength={500}
                   className="input text-base"
                   placeholder="Wprowadź tytuł zadania"
                 />
@@ -126,11 +126,25 @@ const TaskForm: React.FC<TaskFormProps> = ({
                   Opis
                 </label>
                 <textarea
-                  {...register('description')}
-                  rows={3}
-                  className="input resize-none text-base"
+                  {...register('description', {
+                    maxLength: { value: 3000, message: 'Opis nie może być dłuższy niż 3000 znaków' }
+                  })}
+                  maxLength={3000}
+                  rows={8}
+                  className="input resize-y text-base"
                   placeholder="Wprowadź opis zadania (opcjonalnie)"
+                  onChange={(e) => {
+                    register('description').onChange(e);
+                  }}
                 />
+                <div className="flex justify-between items-center mt-1">
+                  {errors.description && (
+                    <p className="text-red-600 text-sm">{errors.description.message}</p>
+                  )}
+                  <p className="text-gray-500 text-xs ml-auto">
+                    {watch('description')?.length || 0}/3000 znaków
+                  </p>
+                </div>
               </div>
             )}
 

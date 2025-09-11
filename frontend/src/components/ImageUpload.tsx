@@ -30,12 +30,8 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 
     setUploading(true);
     try {
-      console.log('=== IMAGE UPLOAD DEBUG ===');
-      console.log('Uploading files:', files);
       const response = await filesApi.upload(files);
-      console.log('Upload response:', response.data);
       const newImages = [...images, ...response.data.files];
-      console.log('New images array:', newImages);
       onImagesChange(newImages);
     } catch (error: any) {
       console.error('Błąd podczas uploadu:', error);

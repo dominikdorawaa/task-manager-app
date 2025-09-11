@@ -3,12 +3,16 @@ import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { useAuth, useUser, SignInButton } from '@clerk/clerk-react';
 import { tasksApi, externalUsersApi, setClerkToken } from '../services/api';
 import { Task, CreateTaskData, UpdateTaskData, BackendTaskData, ExternalUser, CreateExternalUserData, UpdateExternalUserData } from '../types';
+import { useNotifications } from '../hooks/useNotifications';
+import { useToast } from '../hooks/useToast';
 import TaskList from './TaskList';
 import TaskForm from './TaskForm';
 import TaskModal from './TaskModal';
 import ShareTaskModal from './ShareTaskModal';
 import BulkShareModal from './BulkShareModal';
 import ExternalUserManager from './ExternalUserManager';
+import ToastContainer from './Toast';
+import ConfirmModal from './ConfirmModal';
 import ShareOptionsModal from './ShareOptionsModal';
 import { Plus, Share2, X, Users, Copy, Eye, EyeOff } from 'lucide-react';
 
@@ -31,9 +35,52 @@ const Dashboard: React.FC = () => {
   const [showUserManager, setShowUserManager] = useState(false);
   const [externalUsers, setExternalUsers] = useState<ExternalUser[]>([]);
   const [showShareOptions, setShowShareOptions] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmModalData, setConfirmModalData] = useState<{
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    type?: 'danger' | 'warning' | 'info';
+  } | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const queryClient = useQueryClient();
   const { isSignedIn, getToken } = useAuth();
   const { user } = useUser();
+  const { addNotification, notifications } = useNotifications();
+  
+  // Debug powiadomień
+  useEffect(() => {
+    console.log('=== NOTIFICATIONS DEBUG ===');
+    console.log('Notifications count:', notifications.length);
+    console.log('Notifications:', notifications);
+  }, [notifications]);
+
+  // Automatyczne odświeżanie danych co 30 sekund
+  useEffect(() => {
+    if (!isSignedIn || !user?.id) return;
+
+    const interval = setInterval(() => {
+      console.log('🔄 Auto-refreshing data...');
+      queryClient.invalidateQueries(['tasks', user.id]);
+      queryClient.invalidateQueries(['externalUsers']);
+    }, 30000); // 30 sekund
+
+    return () => clearInterval(interval);
+  }, [isSignedIn, user?.id, queryClient]);
+
+  const { toasts, removeToast, showSuccess, showError, showInfo } = useToast();
+
+  // Funkcja do pokazywania modala potwierdzenia
+  const showConfirmDialog = (title: string, message: string, onConfirm: () => void, type: 'danger' | 'warning' | 'info' = 'danger') => {
+    setConfirmModalData({ title, message, onConfirm, type });
+    setShowConfirmModal(true);
+  };
+
+  const closeConfirmModal = () => {
+    setShowConfirmModal(false);
+    setConfirmModalData(null);
+  };
+
 
   // Funkcja do pobierania nazwy użytkownika po ID
   const getUserName = (userId: string): string => {
@@ -160,7 +207,6 @@ const Dashboard: React.FC = () => {
     }
 
     // Debug logi można włączyć w razie potrzeby
-    // console.log('=== MAP TASK FROM BACKEND DEBUG ===');
     // console.log('Original task:', task);
     // console.log('Current user ID:', currentUserId);
     // console.log('Task assignedTo:', task.assignedTo);
@@ -176,6 +222,41 @@ const Dashboard: React.FC = () => {
       }
     }
     
+    // Sprawdź czy zadanie jest udostępnione mi (nie utworzone przeze mnie)
+    let isSharedWithMe = false;
+    if (task.sharedWith && task.sharedWith.length > 0 && !isCreatedByMe && (currentUserId || currentUserEmail || currentUserName)) {
+      // Sprawdź czy moje ID/email/nazwa jest w sharedWith
+      isSharedWithMe = task.sharedWith.some((sharedUserId: string) => 
+        sharedUserId === currentUserId || 
+        sharedUserId === currentUserEmail || 
+        sharedUserId === currentUserName
+      );
+      
+      // Debug dla sprawdzania isSharedWithMe
+      if (task.sharedWith && task.sharedWith.length > 0) {
+        console.log('=== IS SHARED WITH ME DEBUG ===');
+        console.log('Task title:', task.title);
+        console.log('task.sharedWith:', task.sharedWith);
+        console.log('currentUserId:', currentUserId);
+        console.log('currentUserEmail:', currentUserEmail);
+        console.log('currentUserName:', currentUserName);
+        console.log('isCreatedByMe:', isCreatedByMe);
+        console.log('isSharedWithMe result:', isSharedWithMe);
+        
+        // Sprawdź dokładne porównania
+        task.sharedWith.forEach((sharedUserId: string, index: number) => {
+          console.log(`Comparison ${index}:`);
+          console.log(`  sharedUserId: "${sharedUserId}"`);
+          console.log(`  currentUserId: "${currentUserId}"`);
+          console.log(`  currentUserEmail: "${currentUserEmail}"`);
+          console.log(`  currentUserName: "${currentUserName}"`);
+          console.log(`  matches userId: ${sharedUserId === currentUserId}`);
+          console.log(`  matches email: ${sharedUserId === currentUserEmail}`);
+          console.log(`  matches name: ${sharedUserId === currentUserName}`);
+        });
+      }
+    }
+    
     const mappedTask = {
       ...task,
       status: statusMap[task.status] || 'do zrobienia',
@@ -183,8 +264,23 @@ const Dashboard: React.FC = () => {
       images: task.images || [],
       assignedTo: task.assignedTo,
       isAssignedToMe: isAssignedToMe,
-      isCreatedByMe: isCreatedByMe
+      isCreatedByMe: isCreatedByMe,
+      isSharedWithMe: isSharedWithMe,
+      sharedWith: task.sharedWith || []
     };
+
+    // Debug dla sharedWith
+    if (task.sharedWith && task.sharedWith.length > 0) {
+      console.log('=== TASK MAPPING DEBUG ===');
+      console.log('Task title:', task.title);
+      console.log('Original sharedWith:', task.sharedWith);
+      console.log('Mapped sharedWith:', mappedTask.sharedWith);
+      console.log('isSharedWithMe:', isSharedWithMe);
+      console.log('isCreatedByMe:', isCreatedByMe);
+      console.log('Current user ID:', currentUserId);
+      console.log('Current user email:', currentUserEmail);
+      console.log('Current user name:', currentUserName);
+    }
 
     return mappedTask;
   };
@@ -193,10 +289,12 @@ const Dashboard: React.FC = () => {
   const getFilteredTasks = () => {
     let filteredTasks = tasks;
     
-    // Debug logi można włączyć w razie potrzeby
-    // console.log('=== FILTER TASKS DEBUG ===');
-    // console.log('Current category:', taskCategory);
-    // console.log('Total tasks:', tasks.length);
+    // Debug dla kategorii zadań
+    console.log('=== TASK FILTERING DEBUG ===');
+    console.log('Current category:', taskCategory);
+    console.log('Total tasks:', tasks.length);
+    console.log('Tasks with isSharedWithMe:', tasks.filter(t => t.isSharedWithMe).length);
+    console.log('Tasks with sharedWith:', tasks.filter(t => t.sharedWith && t.sharedWith.length > 0).length);
     
     // Filtrowanie według głównej kategorii
     switch (taskCategory) {
@@ -262,10 +360,28 @@ const Dashboard: React.FC = () => {
     }
   );
 
+  // Aktualizuj timestamp gdy dane się zmieniają
+  useEffect(() => {
+    if (tasks.length > 0 || externalUsers.length > 0) {
+      setLastUpdated(new Date());
+    }
+  }, [tasks, externalUsers]);
+
   // Aktualizacja external users gdy dane się zmienią
   useEffect(() => {
+    console.log('=== EXTERNAL USERS DEBUG ===');
+    console.log('External users data:', externalUsersData);
+    console.log('External users count:', externalUsersData.length);
     setExternalUsers(externalUsersData);
+    
+    // Stwórz mapę userNames na podstawie external users
+    const namesMap: Record<string, string> = {};
+    externalUsersData.forEach(user => {
+      namesMap[user.id] = user.name;
+    });
+    setUserNames(namesMap);
   }, [externalUsersData]);
+
 
   // Aktualizacja listy przypisanych użytkowników gdy zmieniają się zadania
   useEffect(() => {
@@ -274,15 +390,85 @@ const Dashboard: React.FC = () => {
     }
   }, [tasks, userNames]);
 
+  // Generowanie powiadomień dla nowo udostępnionych zadań
+  useEffect(() => {
+    if (tasks.length > 0 && user?.id) {
+      tasks.forEach(task => {
+        // Sprawdź czy zadanie jest udostępnione mi i nie zostało utworzone przeze mnie
+        if (task.isSharedWithMe && !task.isCreatedByMe && task.clerkUserId) {
+          // Sprawdź czy to nowe udostępnione zadanie (możemy dodać logikę sprawdzania czy już było powiadomienie)
+          const notificationKey = `shared_${task._id}_${user.id}`;
+          const existingNotification = localStorage.getItem(notificationKey);
+          
+          if (!existingNotification) {
+            // To nowe udostępnione zadanie - dodaj powiadomienie
+            const fromUserName = getUserName(task.clerkUserId);
+            addNotification({
+              type: 'task_shared',
+              title: 'Otrzymałeś nowe zadanie',
+              message: `Zadanie "${task.title}" zostało udostępnione przez ${fromUserName}`,
+              taskId: task._id,
+              taskTitle: task.title,
+              fromUserId: task.clerkUserId,
+              fromUserName: fromUserName,
+            });
+            
+            // Oznacz że powiadomienie zostało wysłane
+            localStorage.setItem(notificationKey, 'true');
+          }
+        }
+      });
+    }
+  }, [tasks, user?.id, addNotification]);
+
+  // Generowanie powiadomień dla nowych zadań przypisanych do użytkownika
+  useEffect(() => {
+    if (tasks.length > 0 && user?.id) {
+      tasks.forEach(task => {
+        // Sprawdź czy zadanie jest przypisane do mnie i nie zostało utworzone przeze mnie
+        if (task.isAssignedToMe && !task.isCreatedByMe && task.clerkUserId) {
+          // Sprawdź czy to nowe przypisane zadanie
+          const notificationKey = `assigned_${task._id}_${user.id}`;
+          const existingNotification = localStorage.getItem(notificationKey);
+          
+          if (!existingNotification) {
+            // To nowe przypisane zadanie - dodaj powiadomienie
+            const fromUserName = getUserName(task.clerkUserId);
+            addNotification({
+              type: 'task_assigned',
+              title: 'Nowe zadanie przypisane',
+              message: `Zostało Ci przypisane nowe zadanie: "${task.title}"`,
+              taskId: task._id,
+              taskTitle: task.title,
+              fromUserId: task.clerkUserId,
+              fromUserName: fromUserName,
+            });
+            
+            // Oznacz jako przetworzone
+            localStorage.setItem(notificationKey, 'true');
+          }
+        }
+      });
+    }
+  }, [tasks, user?.id, addNotification]);
+
   // Usunięto problematyczny useEffect, który powodował nieskończoną pętlę
 
   // Mutacje
   const createTaskMutation = useMutation(
     (data: BackendTaskData) => tasksApi.create(data),
     {
-      onSuccess: () => {
+      onSuccess: (response, variables) => {
         queryClient.invalidateQueries(['tasks', user?.id]);
         setShowTaskForm(false);
+        
+        // Toast notification o utworzeniu zadania
+        showSuccess(
+          'Zadanie zostało utworzone!',
+          `Zadanie "${variables.title}" zostało pomyślnie utworzone.`
+        );
+        
+        // Powiadomienia o nowych zadaniach są generowane automatycznie przez useEffect
       },
     }
   );
@@ -290,13 +476,28 @@ const Dashboard: React.FC = () => {
   const updateTaskMutation = useMutation(
     ({ id, data }: { id: string; data: BackendTaskData }) => tasksApi.update(id, data),
     {
-      onSuccess: (response) => {
+      onSuccess: (response, variables) => {
         console.log('=== UPDATE TASK SUCCESS ===', response);
         // Natychmiastowe odświeżenie danych
         queryClient.invalidateQueries(['tasks', user?.id]);
         queryClient.refetchQueries(['tasks', user?.id]);
         setShowTaskForm(false);
         setEditingTask(undefined);
+        
+        // Dodaj powiadomienie o aktualizacji zadania
+        const task = tasks.find(t => t._id === variables.id);
+        if (task && task.assignedTo && task.assignedTo !== user?.id) {
+          const assignedUserName = getUserName(task.assignedTo);
+          addNotification({
+            type: 'task_updated',
+            title: 'Zadanie zostało zaktualizowane',
+            message: `Zadanie "${variables.data.title}" zostało zaktualizowane`,
+            taskId: variables.id,
+            taskTitle: variables.data.title,
+            fromUserId: user?.id,
+            fromUserName: user?.fullName || user?.primaryEmailAddress?.emailAddress || 'Ty',
+          });
+        }
       },
       onError: (error) => {
         console.error('=== UPDATE TASK ERROR ===', error);
@@ -307,9 +508,25 @@ const Dashboard: React.FC = () => {
   const deleteTaskMutation = useMutation(
     (id: string) => tasksApi.delete(id),
     {
-      onSuccess: () => {
+      onSuccess: (response, taskId) => {
         queryClient.invalidateQueries(['tasks', user?.id]);
+        
+        // Toast notification o usunięciu zadania
+        const task = tasks.find(t => t._id === taskId);
+        const taskTitle = task?.title || 'Zadanie';
+        showSuccess(
+          'Zadanie zostało usunięte!',
+          `Zadanie "${taskTitle}" zostało pomyślnie usunięte.`
+        );
       },
+      onError: (error, taskId) => {
+        const task = tasks.find(t => t._id === taskId);
+        const taskTitle = task?.title || 'Zadanie';
+        showError(
+          'Błąd usuwania zadania',
+          `Nie udało się usunąć zadania "${taskTitle}".`
+        );
+      }
     }
   );
 
@@ -333,11 +550,6 @@ const Dashboard: React.FC = () => {
       status: statusMap[data.status || 'do zrobienia'] || 'DO_ZROBIENIA',
       priority: priorityMap[data.priority || 'średni'] || 'SREDNI'
     };
-    console.log('=== MAP TASK DATA DEBUG ===');
-    console.log('Input data.status:', data.status);
-    console.log('Input data.priority:', data.priority);
-    console.log('Mapped result.status:', result.status);
-    console.log('Mapped result.priority:', result.priority);
     return result;
   };
 
@@ -348,19 +560,24 @@ const Dashboard: React.FC = () => {
 
   const handleUpdateTask = (data: CreateTaskData) => {
     if (editingTask) {
-      console.log('=== UPDATE TASK DEBUG (Frontend) ===');
-      console.log('Original data from form:', data);
       const mappedData = mapTaskDataForBackend(data);
-      console.log('Mapped data for backend:', mappedData);
-      console.log('Editing task ID:', editingTask._id);
       updateTaskMutation.mutate({ id: editingTask._id, data: mappedData });
     }
   };
 
   const handleDeleteTask = (taskId: string) => {
-    if (window.confirm('Czy na pewno chcesz usunąć to zadanie?')) {
-      deleteTaskMutation.mutate(taskId);
-    }
+    const task = tasks.find(t => t._id === taskId);
+    const taskTitle = task?.title || 'to zadanie';
+    
+    showConfirmDialog(
+      'Usuń zadanie',
+      `Czy na pewno chcesz usunąć zadanie "${taskTitle}"? Ta operacja jest nieodwracalna.`,
+      () => {
+        deleteTaskMutation.mutate(taskId);
+        closeConfirmModal();
+      },
+      'danger'
+    );
   };
 
   const handleEditTask = (task: Task) => {
@@ -379,6 +596,28 @@ const Dashboard: React.FC = () => {
       };
       
       const mappedStatus = statusMap[status] || 'DO_ZROBIENIA';
+      
+      // Dodaj powiadomienie o zmianie statusu
+      if (task.assignedTo && task.assignedTo !== user?.id) {
+        const assignedUserName = getUserName(task.assignedTo);
+        const statusText = {
+          'do zrobienia': 'Do zrobienia',
+          'w trakcie': 'W trakcie',
+          'zakończone': 'Zakończone',
+          'anulowane': 'Anulowane'
+        }[status] || status;
+        
+        addNotification({
+          type: 'task_status_changed',
+          title: 'Status zadania został zmieniony',
+          message: `Status zadania "${task.title}" został zmieniony na "${statusText}"`,
+          taskId: taskId,
+          taskTitle: task.title,
+          fromUserId: user?.id,
+          fromUserName: user?.fullName || user?.primaryEmailAddress?.emailAddress || 'Ty',
+        });
+      }
+      
       updateTaskMutation.mutate({
         id: taskId,
         data: { status: mappedStatus } as BackendTaskData
@@ -466,26 +705,59 @@ const Dashboard: React.FC = () => {
     if (!sharingTask) return;
     
     try {
+      console.log('=== FRONTEND SHARE DEBUG ===');
       console.log('Udostępnianie zadania:', {
         taskId: sharingTask._id,
         userIds,
-        message
+        message,
+        taskTitle: sharingTask.title,
+        taskClerkUserId: sharingTask.clerkUserId
       });
       
       const response = await tasksApi.share(sharingTask._id, userIds, message);
       
+      console.log('Share response:', response.data);
+      
       if (response.data.success) {
+        console.log('Share successful, refreshing tasks...');
         // Odśwież listę zadań
         queryClient.invalidateQueries(['tasks']);
         
-        alert(`Zadanie "${sharingTask.title}" zostało udostępnione ${userIds.length} użytkownikom!`);
+        // Dodatkowo odśwież dane po krótkiej przerwie
+        setTimeout(() => {
+          console.log('Force refreshing tasks after share...');
+          queryClient.invalidateQueries(['tasks']);
+        }, 1000);
+        
+        // Dodaj powiadomienie dla każdego użytkownika, któremu udostępniono zadanie
+        userIds.forEach(userId => {
+          const userName = getUserName(userId);
+          addNotification({
+            type: 'task_shared',
+            title: 'Zadanie zostało udostępnione',
+            message: `Zadanie "${sharingTask.title}" zostało udostępnione użytkownikowi ${userName}`,
+            taskId: sharingTask._id,
+            taskTitle: sharingTask.title,
+            fromUserId: user?.id,
+            fromUserName: user?.fullName || user?.primaryEmailAddress?.emailAddress || 'Ty',
+          });
+        });
+        
+        showSuccess(
+          'Zadanie zostało udostępnione!',
+          `Zadanie "${sharingTask.title}" zostało udostępnione ${userIds.length} użytkownikom.`
+        );
         closeShareModal();
       } else {
-        alert(`Błąd: ${response.data.message}`);
+        console.error('Share failed:', response.data);
+        showError('Błąd udostępniania', response.data.message);
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('=== SHARE ERROR ===');
       console.error('Błąd udostępniania:', error);
-      alert('Wystąpił błąd podczas udostępniania zadania.');
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      showError('Błąd udostępniania', `Wystąpił błąd podczas udostępniania zadania: ${error.response?.data?.message || error.message}`);
     }
   };
 
@@ -519,38 +791,48 @@ const Dashboard: React.FC = () => {
       if (successCount > 0) {
         // Odśwież listę zadań
         queryClient.invalidateQueries(['tasks']);
-        alert(`${successCount} zadań zostało udostępnione ${userIds.length} użytkownikom!`);
+        showSuccess(
+          'Zadania zostały udostępnione!',
+          `${successCount} zadań zostało udostępnione ${userIds.length} użytkownikom.`
+        );
       }
       
       if (errorCount > 0) {
-        alert(`${errorCount} zadań nie udało się udostępnić.`);
+        showError('Błąd udostępniania', `${errorCount} zadań nie udało się udostępnić.`);
       }
       
       closeBulkShareModal();
       exitSelectionMode();
     } catch (error) {
       console.error('Błąd masowego udostępniania:', error);
-      alert('Wystąpił błąd podczas masowego udostępniania zadań.');
+      showError('Błąd udostępniania', 'Wystąpił błąd podczas masowego udostępniania zadań.');
     }
   };
 
   // Funkcje do zarządzania użytkownikami zewnętrznymi
   const handleAddExternalUser = async (userData: CreateExternalUserData) => {
     try {
+      console.log('=== ADD EXTERNAL USER DEBUG ===');
       console.log('Dodawanie użytkownika zewnętrznego:', userData);
       
       const response = await externalUsersApi.create(userData);
       
+      console.log('Create user response:', response.data);
+      
       if (response.data.success) {
         // Odśwież listę użytkowników
         queryClient.invalidateQueries(['externalUsers']);
-        alert(`Użytkownik ${userData.name} został dodany!`);
+        showSuccess('Użytkownik został dodany!', `Użytkownik ${userData.name} został pomyślnie dodany.`);
       } else {
-        alert(`Błąd: ${response.data.message}`);
+        console.error('Create user failed:', response.data);
+        showError('Błąd dodawania użytkownika', response.data.message);
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('=== ADD USER ERROR ===');
       console.error('Błąd dodawania użytkownika:', error);
-      alert('Wystąpił błąd podczas dodawania użytkownika.');
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      showError('Błąd dodawania użytkownika', `Wystąpił błąd podczas dodawania użytkownika: ${error.response?.data?.message || error.message}`);
     }
   };
 
@@ -563,13 +845,13 @@ const Dashboard: React.FC = () => {
       if (response.data.success) {
         // Odśwież listę użytkowników
         queryClient.invalidateQueries(['externalUsers']);
-        alert('Użytkownik został zaktualizowany!');
+        showSuccess('Użytkownik został zaktualizowany!', 'Dane użytkownika zostały pomyślnie zaktualizowane.');
       } else {
-        alert(`Błąd: ${response.data.message}`);
+        showError('Błąd aktualizacji użytkownika', response.data.message);
       }
     } catch (error) {
       console.error('Błąd aktualizacji użytkownika:', error);
-      alert('Wystąpił błąd podczas aktualizacji użytkownika.');
+      showError('Błąd aktualizacji użytkownika', 'Wystąpił błąd podczas aktualizacji użytkownika.');
     }
   };
 
@@ -577,8 +859,20 @@ const Dashboard: React.FC = () => {
     const user = externalUsers.find(u => u.id === id);
     if (!user) return;
     
-    const confirmed = window.confirm(`Czy na pewno chcesz usunąć użytkownika "${user.name}"?`);
-    if (!confirmed) return;
+    showConfirmDialog(
+      'Usuń użytkownika',
+      `Czy na pewno chcesz usunąć użytkownika "${user.name}"? Ta operacja jest nieodwracalna.`,
+      () => {
+        performDeleteExternalUser(id);
+        closeConfirmModal();
+      },
+      'danger'
+    );
+  };
+
+  const performDeleteExternalUser = async (id: string) => {
+    const user = externalUsers.find(u => u.id === id);
+    if (!user) return;
     
     try {
       console.log('Usuwanie użytkownika zewnętrznego:', id);
@@ -588,13 +882,13 @@ const Dashboard: React.FC = () => {
       if (response.data.success) {
         // Odśwież listę użytkowników
         queryClient.invalidateQueries(['externalUsers']);
-        alert(`Użytkownik ${user.name} został usunięty!`);
+        showSuccess('Użytkownik został usunięty!', `Użytkownik ${user.name} został pomyślnie usunięty.`);
       } else {
-        alert(`Błąd: ${response.data.message}`);
+        showError('Błąd usuwania użytkownika', response.data.message);
       }
     } catch (error) {
       console.error('Błąd usuwania użytkownika:', error);
-      alert('Wystąpił błąd podczas usuwania użytkownika.');
+      showError('Błąd usuwania użytkownika', 'Wystąpił błąd podczas usuwania użytkownika.');
     }
   };
 
@@ -635,6 +929,11 @@ const Dashboard: React.FC = () => {
     <div className="flex-1">
       <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Taskyy</h1>
       <p className="text-gray-600 dark:text-gray-300 mt-1 text-sm sm:text-base">Organizuj swoje zadania w prosty i efektywny sposób</p>
+      {lastUpdated && (
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+          Ostatnio zaktualizowane: {lastUpdated.toLocaleTimeString('pl-PL')}
+        </p>
+      )}
       
       {/* ID użytkownika */}
       {user && (
@@ -792,7 +1091,11 @@ const Dashboard: React.FC = () => {
               }).length})
             </button>
             <button
-              onClick={() => setTaskCategory('shared')}
+              onClick={() => {
+                console.log('=== CLICKING SHARED CATEGORY ===');
+                console.log('Tasks with isSharedWithMe:', tasks.filter(t => t.isSharedWithMe));
+                setTaskCategory('shared');
+              }}
               className={`px-3 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base border ${
                 taskCategory === 'shared'
                   ? 'bg-blue-500 text-white border-blue-600'
@@ -870,7 +1173,6 @@ const Dashboard: React.FC = () => {
         {/* Modal formularza */}
         {showTaskForm && (
           <>
-            {console.log('=== DASHBOARD RENDER DEBUG ===', { editingTask: editingTask?.title, isEditing: !!editingTask })}
             <TaskForm
               task={editingTask}
               onSubmit={editingTask ? handleUpdateTask : handleCreateTask}
@@ -907,14 +1209,21 @@ const Dashboard: React.FC = () => {
 
       {/* Modal udostępniania pojedynczego zadania */}
       {showShareModal && sharingTask && (
-        <ShareTaskModal
-          isOpen={showShareModal}
-          onClose={closeShareModal}
-          task={sharingTask}
-          onShare={handleShare}
-          availableUsers={externalUsers.map(user => ({ id: user.id, name: user.name }))}
-          isLoading={false}
-        />
+        <>
+          {console.log('=== SHARE MODAL DEBUG ===', {
+            sharingTask: sharingTask.title,
+            externalUsersCount: externalUsers.length,
+            availableUsers: externalUsers.map(user => ({ id: user.id, name: user.name }))
+          })}
+          <ShareTaskModal
+            isOpen={showShareModal}
+            onClose={closeShareModal}
+            task={sharingTask}
+            onShare={handleShare}
+            availableUsers={externalUsers.map(user => ({ id: user.id, name: user.name }))}
+            isLoading={false}
+          />
+        </>
       )}
 
       {/* Modal masowego udostępniania */}
@@ -941,6 +1250,23 @@ const Dashboard: React.FC = () => {
           onUpdateUser={handleUpdateExternalUser}
           onDeleteUser={handleDeleteExternalUser}
           isLoading={false}
+        />
+      )}
+
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
+
+      {/* Confirm Modal */}
+      {showConfirmModal && confirmModalData && (
+        <ConfirmModal
+          isOpen={showConfirmModal}
+          onClose={closeConfirmModal}
+          onConfirm={confirmModalData.onConfirm}
+          title={confirmModalData.title}
+          message={confirmModalData.message}
+          type={confirmModalData.type}
+          confirmText="Usuń"
+          cancelText="Anuluj"
         />
       )}
     </div>

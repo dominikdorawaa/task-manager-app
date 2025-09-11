@@ -1,11 +1,17 @@
 package com.taskmanager.dto;
 
 import com.taskmanager.model.Task;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data
 public class CreateTaskRequest {
+    @NotBlank(message = "Tytuł jest wymagany")
+    @Size(max = 500, message = "Tytuł nie może być dłuższy niż 500 znaków")
     private String title;
+    
+    @Size(max = 3000, message = "Opis nie może być dłuższy niż 3000 znaków")
     private String description;
     private String status;
     private String priority;

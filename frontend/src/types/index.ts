@@ -131,5 +131,19 @@ export interface UpdateExternalUserData {
   isActive?: boolean;
 }
 
+// Typy dla systemu powiadomień
+export interface Notification {
+  id: string;
+  type: 'task_shared' | 'task_assigned' | 'task_status_changed' | 'task_updated' | 'task_created';
+  title: string;
+  message: string;
+  taskId?: string;
+  taskTitle?: string;
+  fromUserId?: string;
+  fromUserName?: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
 
 

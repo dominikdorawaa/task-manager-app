@@ -123,10 +123,10 @@ npm test         # Uruchom testy
 
 ## 📝 Walidacja
 
-Wszystkie endpointy używają express-validator do walidacji danych:
+Wszystkie endpointy używają walidacji danych:
 
-- **Tytuł zadania**: 1-100 znaków
-- **Opis zadania**: max 500 znaków
+- **Tytuł zadania**: 1-500 znaków
+- **Opis zadania**: max 3000 znaków
 - **Email**: Poprawny format email
 - **Hasło**: min 6 znaków
 - **Imię**: 2-50 znaków
@@ -159,6 +159,7 @@ W przypadku problemów sprawdź:
 2. Czy zmienne środowiskowe są poprawnie ustawione
 3. Czy wszystkie zależności są zainstalowane
 4. Logi w konsoli serwera
+
 
 
 

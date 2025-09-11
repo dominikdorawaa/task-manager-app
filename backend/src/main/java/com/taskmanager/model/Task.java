@@ -3,6 +3,7 @@ package com.taskmanager.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -26,8 +27,12 @@ public class Task {
     }
 
     @NotBlank
+    @Size(max = 500, message = "Tytuł nie może być dłuższy niż 500 znaków")
+    @Column(length = 500)
     private String title;
 
+    @Size(max = 3000, message = "Opis nie może być dłuższy niż 3000 znaków")
+    @Column(name = "description_text", columnDefinition = "text")
     private String description;
 
     @NotNull

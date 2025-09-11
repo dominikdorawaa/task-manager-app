@@ -240,7 +240,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
             )}
 
             {/* Przypisany użytkownik */}
-            {task.assignedTo && (
+            {task.assignedTo && !(task.isAssignedToMe && task.isCreatedByMe) && (
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Przypisanie</h3>
                 <div className="flex items-center text-gray-600 dark:text-gray-300">

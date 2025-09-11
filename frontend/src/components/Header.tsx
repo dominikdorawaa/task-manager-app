@@ -1,13 +1,26 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { CheckSquare, Moon, Sun, Menu, X } from "lucide-react";
+import { CheckSquare, Moon, Sun, Menu, X, RefreshCw } from "lucide-react";
 import { UserButton, useUser } from "@clerk/clerk-react";
 import { useTheme } from "../contexts/ThemeContext";
+import NotificationBell from "./NotificationBell";
+import { useNotifications } from "../hooks/useNotifications";
+import { useRefresh } from "../hooks/useRefresh";
+import { useToast } from "../hooks/useToast";
+import ToastContainer from "./Toast";
 
 const Header: React.FC = () => {
   const { isSignedIn, user } = useUser();
   const { theme, toggleTheme } = useTheme();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const {
+    notifications,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+  } = useNotifications();
+  const { refreshData, isRefreshing } = useRefresh();
+  const { toasts, removeToast } = useToast();
 
   return (
     <header className="bg-white dark:bg-[#181818] shadow-sm border-b border-gray-200 dark:border-[#404040]">
@@ -31,6 +44,19 @@ const Header: React.FC = () => {
 
           {/* Desktop Profile */}
           <div className="hidden md:flex items-center space-x-4">
+            {isSignedIn && user && (
+              <button
+                onClick={refreshData}
+                disabled={isRefreshing}
+                className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-[#212121] dark:hover:bg-[#2a2a2a] transition-colors disabled:opacity-50"
+                title="Odśwież dane"
+              >
+                <RefreshCw 
+                  size={20} 
+                  className={`text-gray-600 dark:text-gray-300 ${isRefreshing ? 'animate-spin' : ''}`} 
+                />
+              </button>
+            )}
             <button
               onClick={toggleTheme}
               className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-[#212121] dark:hover:bg-[#2a2a2a] transition-colors"
@@ -44,7 +70,15 @@ const Header: React.FC = () => {
             </button>
             
             {isSignedIn && user && (
-              <UserButton afterSignOutUrl="/" />
+              <>
+                <NotificationBell
+                  notifications={notifications}
+                  onMarkAsRead={markAsRead}
+                  onMarkAllAsRead={markAllAsRead}
+                  onDeleteNotification={deleteNotification}
+                />
+                <UserButton afterSignOutUrl="/" />
+              </>
             )}
           </div>
 
@@ -71,6 +105,19 @@ const Header: React.FC = () => {
             </nav>
             
             <div className="flex flex-col items-center space-y-4 mt-4 pt-4 border-t border-gray-200 dark:border-[#404040]">
+              {isSignedIn && user && (
+                <button
+                  onClick={refreshData}
+                  disabled={isRefreshing}
+                  className="flex items-center space-x-2 p-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-[#212121] dark:hover:bg-[#2a2a2a] transition-colors disabled:opacity-50"
+                >
+                  <RefreshCw 
+                    size={20} 
+                    className={`text-gray-600 dark:text-gray-300 ${isRefreshing ? 'animate-spin' : ''}`} 
+                  />
+                  <span className="text-sm">Odśwież</span>
+                </button>
+              )}
               <button
                 onClick={toggleTheme}
                 className="flex items-center space-x-2 p-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-[#212121] dark:hover:bg-[#2a2a2a] transition-colors"
@@ -84,12 +131,23 @@ const Header: React.FC = () => {
               </button>
               
               {isSignedIn && user && (
-                <UserButton afterSignOutUrl="/" />
+                <>
+                  <NotificationBell
+                    notifications={notifications}
+                    onMarkAsRead={markAsRead}
+                    onMarkAllAsRead={markAllAsRead}
+                    onDeleteNotification={deleteNotification}
+                  />
+                  <UserButton afterSignOutUrl="/" />
+                </>
               )}
             </div>
           </div>
         )}
       </div>
+      
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </header>
   );
 };

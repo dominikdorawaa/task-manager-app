@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
+import java.util.Base64;
 
 @RestController
 @RequestMapping("/api/files")
@@ -62,11 +63,12 @@ public class FileController {
                 String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
                 String filename = UUID.randomUUID().toString() + extension;
                 
-                // Zapisywanie pliku
-                Path filePath = uploadPath.resolve(filename);
-                Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+                // Zapisywanie pliku jako base64 w bazie danych
+                byte[] fileBytes = file.getBytes();
+                String base64Image = Base64.getEncoder().encodeToString(fileBytes);
+                String dataUrl = "data:" + file.getContentType() + ";base64," + base64Image;
                 
-                uploadedFiles.add("/api/files/images/" + filename);
+                uploadedFiles.add(dataUrl);
             }
             
             return ResponseEntity.ok(Map.of("files", uploadedFiles));

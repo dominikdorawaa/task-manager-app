@@ -19,4 +19,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     
     // Alternatywna metoda - znajdź zadania przypisane do użytkownika (prostsze zapytanie)
     List<Task> findByAssignedToContainingAndClerkUserIdNot(String assignedTo, String clerkUserId);
+    
+    // Znajdź zadania udostępnione użytkownikowi (gdzie użytkownik jest w sharedWith)
+    List<Task> findBySharedWithContainingAndClerkUserIdNot(String userId, String excludeUserId);
 }

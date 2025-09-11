@@ -180,9 +180,9 @@ const TaskCard: React.FC<TaskCardProps> = ({
             Udostępnione przez {getUserName(task.clerkUserId)}
           </span>
         )}
-        {task.sharedWith && task.sharedWith.length > 0 && (
+        {task.sharedWith && task.sharedWith.length > 0 && task.isCreatedByMe && (
           <span className="inline-block px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 rounded-full border border-purple-200 dark:border-purple-500/50">
-            Udostępnione ({task.sharedWith.length})
+            Udostępnione: {task.sharedWith.map(userId => getUserName(userId)).join(', ')}
           </span>
         )}
       </div>
@@ -288,7 +288,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
         )}
 
         {/* Przypisany użytkownik */}
-        {task.assignedTo && (
+        {task.assignedTo && !(task.isAssignedToMe && task.isCreatedByMe) && (
           <div className="text-sm text-gray-600 dark:text-gray-300">
             <div className="flex items-center mb-1">
               <UserIcon size={14} className="mr-2 flex-shrink-0" />
@@ -305,14 +305,6 @@ const TaskCard: React.FC<TaskCardProps> = ({
         )}
 
         {/* Zdjęcia */}
-        {(() => {
-          console.log('=== TASK CARD IMAGES DEBUG ===');
-          console.log('Task:', task);
-          console.log('Task images:', task.images);
-          console.log('Images type:', typeof task.images);
-          console.log('Images length:', task.images?.length);
-          return null;
-        })()}
         {task.images && task.images.length > 0 && (
           <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
