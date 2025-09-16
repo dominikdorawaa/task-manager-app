@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { Task, CreateTaskData, ExternalUser } from '../types';
 import { X, Plus } from 'lucide-react';
 import ImageUpload from './ImageUpload';
+import { useUser } from '@clerk/clerk-react';
 
 interface TaskFormProps {
   task?: Task;
@@ -24,13 +25,14 @@ const TaskForm: React.FC<TaskFormProps> = ({
   const [tags, setTags] = useState<string[]>(task?.tags || []);
   const [images, setImages] = useState<string[]>(task?.images || []);
   const [newTag, setNewTag] = useState('');
-  const [assignedTo, setAssignedTo] = useState<string | undefined>(task?.assignedTo);
+  const [assignedTo, setAssignedTo] = useState<string[]>(task?.assignedTo || []);
+  const [assignedUserNote, setAssignedUserNote] = useState<string>(task?.assignedUserNote || '');
+  const { user } = useUser();
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-    setValue,
     watch,
     reset
   } = useForm<CreateTaskData>({
@@ -55,7 +57,8 @@ const TaskForm: React.FC<TaskFormProps> = ({
       });
       setTags(task.tags || []);
       setImages(task.images || []);
-      setAssignedTo(task.assignedTo);
+      setAssignedTo(task.assignedTo || []);
+      setAssignedUserNote(task.assignedUserNote || '');
     }
   }, [task, reset]);
 
@@ -76,8 +79,17 @@ const TaskForm: React.FC<TaskFormProps> = ({
       ...data,
       tags,
       images,
-      assignedTo
+      assignedTo: assignedTo.length > 0 ? assignedTo : [],
+      assignedUserNote: assignedUserNote.trim() || undefined,
+      assignedUserNoteAuthor: assignedUserNote.trim() ? user?.id : undefined
     };
+    
+    // Debug log
+    console.log('=== TASK FORM SUBMIT DEBUG ===');
+    console.log('assignedUserNote:', assignedUserNote);
+    console.log('assignedUserNoteAuthor:', user?.id);
+    console.log('submitData:', submitData);
+    
     onSubmit(submitData);
   };
 
@@ -201,24 +213,69 @@ const TaskForm: React.FC<TaskFormProps> = ({
               </div>
             )}
 
-            {/* Przypisany użytkownik - tylko dla twórców */}
+            {/* Przypisani użytkownicy - tylko dla twórców */}
             {!isAssignedUser && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Przypisany użytkownik
+                  Przypisani użytkownicy
                 </label>
                 <select
-                  value={assignedTo || ''}
-                  onChange={(e) => setAssignedTo(e.target.value || undefined)}
+                  value=""
+                  onChange={(e) => {
+                    const userId = e.target.value;
+                    if (userId && !assignedTo.includes(userId)) {
+                      setAssignedTo([...assignedTo, userId]);
+                    }
+                    e.target.value = "";
+                  }}
                   className="input"
                 >
                   <option value="">Wybierz użytkownika...</option>
-                  {externalUsers.filter(user => user.isActive).map((user) => (
+                  {/* Opcja "Ja" */}
+                  {user?.id && !assignedTo.includes(user.id) && (
+                    <option value={user.id}>
+                      Ja ({user.fullName || user.primaryEmailAddress?.emailAddress || 'Ty'})
+                    </option>
+                  )}
+                  {/* Inni użytkownicy */}
+                  {externalUsers.filter(user => user.isActive && !assignedTo.includes(user.id)).map((user) => (
                     <option key={user.id} value={user.id}>
                       {user.name} ({user.id})
                     </option>
                   ))}
                 </select>
+                
+                {/* Lista przypisanych użytkowników */}
+                {assignedTo.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {assignedTo.map((userId) => {
+                      const externalUser = externalUsers.find(u => u.id === userId);
+                      const isCurrentUser = userId === user?.id;
+                      const displayName = isCurrentUser 
+                        ? 'Ja' 
+                        : externalUser 
+                          ? externalUser.name 
+                          : userId;
+                      
+                      return (
+                        <span
+                          key={userId}
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 text-sm rounded-full border border-blue-200 dark:border-blue-500/50"
+                        >
+                          {displayName}
+                          <button
+                            type="button"
+                            onClick={() => setAssignedTo(assignedTo.filter(id => id !== userId))}
+                            className="text-blue-600 hover:text-blue-800 dark:text-blue-300 dark:hover:text-blue-100"
+                          >
+                            <X size={12} />
+                          </button>
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+                
                 {externalUsers.filter(user => user.isActive).length === 0 && (
                   <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-500/50 rounded-lg">
                     <p className="text-sm text-blue-700 dark:text-blue-300">
@@ -229,6 +286,25 @@ const TaskForm: React.FC<TaskFormProps> = ({
                     </p>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Notatka od przypisanego użytkownika */}
+            {isAssignedUser && (
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Twoja notatka/feedback
+                </label>
+                <textarea
+                  value={assignedUserNote}
+                  onChange={(e) => setAssignedUserNote(e.target.value)}
+                  placeholder="Dodaj notatkę lub feedback do tego zadania..."
+                  className="input min-h-[80px] resize-y"
+                  maxLength={1000}
+                />
+                <div className="text-xs text-gray-500 dark:text-gray-400">
+                  {assignedUserNote.length}/1000 znaków
+                </div>
               </div>
             )}
 

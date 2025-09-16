@@ -114,13 +114,28 @@ public class TaskService {
             task.setImages(request.getImages());
         }
 
-        // Obsługa przypisania użytkownika
+        // Obsługa przypisania użytkowników
         if (request.getAssignedTo() != null) {
-            if (request.getAssignedTo().trim().isEmpty()) {
-                // Jeśli przesłano pusty string, przypisz automatycznie do siebie
-                task.setAssignedTo(task.getClerkUserId());
+            if (request.getAssignedTo().length == 0) {
+                // Jeśli przesłano pustą tablicę, przypisz automatycznie do siebie
+                task.setAssignedTo(new String[]{task.getClerkUserId()});
             } else {
                 task.setAssignedTo(request.getAssignedTo());
+            }
+        }
+
+        // Obsługa notatki od przypisanego użytkownika
+        if (request.getAssignedUserNote() != null) {
+            System.out.println("=== UPDATING TASK WITH NOTE ===");
+            System.out.println("assignedUserNote: " + request.getAssignedUserNote());
+            System.out.println("assignedUserNoteAuthor: " + request.getAssignedUserNoteAuthor());
+            if (request.getAssignedUserNote().trim().isEmpty()) {
+                // Jeśli przesłano pusty string, usuń notatkę
+                task.setAssignedUserNote(null);
+                task.setAssignedUserNoteAuthor(null);
+            } else {
+                task.setAssignedUserNote(request.getAssignedUserNote().trim());
+                task.setAssignedUserNoteAuthor(request.getAssignedUserNoteAuthor());
             }
         }
 
@@ -161,7 +176,7 @@ public class TaskService {
         // Pobierz zadania przypisane do użytkownika po emailu (ale nie utworzone przez niego)
         List<Task> assignedTasksByEmail = new ArrayList<>();
         if (userEmail != null && !userEmail.trim().isEmpty()) {
-            assignedTasksByEmail = taskRepository.findByAssignedToAndClerkUserIdNot(userEmail, clerkUserId);
+            assignedTasksByEmail = taskRepository.findByAssignedToContainingAndClerkUserIdNot(userEmail, clerkUserId);
             System.out.println("Assigned tasks by email count: " + assignedTasksByEmail.size());
         }
         
@@ -211,12 +226,21 @@ public class TaskService {
             task.setImages(request.getImages());
         }
 
-        // Obsługa przypisania użytkownika
-        if (request.getAssignedTo() != null && !request.getAssignedTo().trim().isEmpty()) {
+        // Obsługa przypisania użytkowników
+        if (request.getAssignedTo() != null && request.getAssignedTo().length > 0) {
             task.setAssignedTo(request.getAssignedTo());
         } else {
             // Jeśli nie przypisano do nikogo, przypisz automatycznie do siebie
-            task.setAssignedTo(clerkUserId);
+            task.setAssignedTo(new String[]{clerkUserId});
+        }
+
+        // Obsługa notatki od przypisanego użytkownika
+        if (request.getAssignedUserNote() != null && !request.getAssignedUserNote().trim().isEmpty()) {
+            System.out.println("=== CREATING TASK WITH NOTE ===");
+            System.out.println("assignedUserNote: " + request.getAssignedUserNote());
+            System.out.println("assignedUserNoteAuthor: " + request.getAssignedUserNoteAuthor());
+            task.setAssignedUserNote(request.getAssignedUserNote().trim());
+            task.setAssignedUserNoteAuthor(request.getAssignedUserNoteAuthor());
         }
 
         return taskRepository.save(task);

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Task } from '../types';
 import TaskCard from './TaskCard';
-import { Search, Filter, SortAsc, SortDesc } from 'lucide-react';
+import { Search, SortAsc, SortDesc } from 'lucide-react';
 
 interface TaskListProps {
   tasks: Task[];
@@ -14,6 +14,7 @@ interface TaskListProps {
   selectedTasks?: Set<string>;
   isLoading?: boolean;
   getUserName: (userId: string) => string;
+  getUserAvatar?: (userId: string) => string | null;
 }
 
 const TaskList: React.FC<TaskListProps> = ({
@@ -26,7 +27,8 @@ const TaskList: React.FC<TaskListProps> = ({
   onTaskSelection,
   selectedTasks = new Set(),
   isLoading = false,
-  getUserName
+  getUserName,
+  getUserAvatar
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
@@ -286,6 +288,7 @@ const TaskList: React.FC<TaskListProps> = ({
             onTaskSelection={onTaskSelection}
             isSelected={selectedTasks.has(task._id)}
             getUserName={getUserName}
+            getUserAvatar={getUserAvatar}
           />
         ))}
       </div>

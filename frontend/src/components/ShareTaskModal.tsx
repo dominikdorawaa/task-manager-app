@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Task } from '../types';
-import { X, Share2, Users, Check, X as XIcon } from 'lucide-react';
+import { X, Share2, Users, Check } from 'lucide-react';
 
 interface ShareTaskModalProps {
   isOpen: boolean;

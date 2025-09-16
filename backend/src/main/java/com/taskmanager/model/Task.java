@@ -57,9 +57,20 @@ public class Task {
     @Column(name = "clerk_user_id")
     private String clerkUserId;
 
-    // Przypisany użytkownik (Clerk User ID)
-    @Column(name = "assigned_to")
+    // Przypisani użytkownicy (Clerk User IDs) - JSON array
+    @Column(name = "assigned_to", columnDefinition = "text")
     private String assignedTo;
+
+    // Notatka od przypisanego użytkownika
+    @Size(max = 1000, message = "Notatka nie może być dłuższa niż 1000 znaków")
+    @Column(name = "assigned_user_note", columnDefinition = "text")
+    @JsonProperty("assignedUserNote")
+    private String assignedUserNote;
+
+    // ID użytkownika który dodał notatkę
+    @Column(name = "assigned_user_note_author")
+    @JsonProperty("assignedUserNoteAuthor")
+    private String assignedUserNoteAuthor;
 
     // Tagi jako JSON string
     @Column(name = "tags", columnDefinition = "text")
@@ -208,6 +219,44 @@ public class Task {
                 this.shareRequests = mapper.writeValueAsString(shareRequestsArray);
             } catch (Exception e) {
                 this.shareRequests = null;
+            }
+        }
+    }
+
+    // Parsowanie assignedTo JSON
+    @JsonProperty("assignedTo")
+    public String[] getAssignedTo() {
+        if (assignedTo == null || assignedTo.trim().isEmpty()) {
+            return new String[0];
+        }
+        
+        String trimmed = assignedTo.trim();
+        
+        // Sprawdź czy to JSON array
+        if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+            try {
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                return mapper.readValue(trimmed, String[].class);
+            } catch (Exception e) {
+                System.err.println("Error parsing assignedTo JSON: " + e.getMessage());
+                // Jeśli parsowanie się nie udało, traktuj jako pojedynczy string
+                return new String[]{trimmed};
+            }
+        } else {
+            // To jest pojedynczy string (stare dane)
+            return new String[]{trimmed};
+        }
+    }
+
+    public void setAssignedTo(String[] assignedToArray) {
+        if (assignedToArray == null || assignedToArray.length == 0) {
+            this.assignedTo = null;
+        } else {
+            try {
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                this.assignedTo = mapper.writeValueAsString(assignedToArray);
+            } catch (Exception e) {
+                this.assignedTo = null;
             }
         }
     }

@@ -19,6 +19,9 @@ public class ExternalUser {
     @NotBlank
     private String name;
 
+    @Column(name = "avatar", columnDefinition = "text")
+    private String avatar; // URL do zdjęcia użytkownika
+
     @Column(name = "is_active")
     private Boolean isActive = true;
 

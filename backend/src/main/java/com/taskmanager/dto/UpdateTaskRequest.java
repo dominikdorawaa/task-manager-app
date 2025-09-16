@@ -16,7 +16,10 @@ public class UpdateTaskRequest {
     private String dueDate; // String w formacie YYYY-MM-DD
     private String[] tags;
     private String[] images; // Ścieżki do zdjęć
-    private String assignedTo; // Clerk User ID użytkownika przypisanego do zadania
+    private String[] assignedTo; // Clerk User IDs użytkowników przypisanych do zadania
+    @Size(max = 1000, message = "Notatka nie może być dłuższa niż 1000 znaków")
+    private String assignedUserNote; // Notatka od przypisanego użytkownika
+    private String assignedUserNoteAuthor; // ID użytkownika który dodał notatkę
 
     // Gettery i settery
     public String getTitle() { return title; }
@@ -34,8 +37,14 @@ public class UpdateTaskRequest {
     public String[] getImages() { return images; }
     public void setImages(String[] images) { this.images = images; }
     
-    public String getAssignedTo() { return assignedTo; }
-    public void setAssignedTo(String assignedTo) { this.assignedTo = assignedTo; }
+    public String[] getAssignedTo() { return assignedTo; }
+    public void setAssignedTo(String[] assignedTo) { this.assignedTo = assignedTo; }
+    
+    public String getAssignedUserNote() { return assignedUserNote; }
+    public void setAssignedUserNote(String assignedUserNote) { this.assignedUserNote = assignedUserNote; }
+    
+    public String getAssignedUserNoteAuthor() { return assignedUserNoteAuthor; }
+    public void setAssignedUserNoteAuthor(String assignedUserNoteAuthor) { this.assignedUserNoteAuthor = assignedUserNoteAuthor; }
 
 
     // Gettery i settery dla Jackson deserializacji

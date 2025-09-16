@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.Base64;
 
@@ -58,10 +57,6 @@ public class FileController {
                         .body(Map.of("error", "Plik jest za duży. Maksymalny rozmiar to 5MB"));
                 }
                 
-                // Generowanie unikalnej nazwy pliku
-                String originalFilename = file.getOriginalFilename();
-                String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-                String filename = UUID.randomUUID().toString() + extension;
                 
                 // Zapisywanie pliku jako base64 w bazie danych
                 byte[] fileBytes = file.getBytes();

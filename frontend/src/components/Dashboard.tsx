@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { useAuth, useUser, SignInButton } from '@clerk/clerk-react';
 import { tasksApi, externalUsersApi, setClerkToken } from '../services/api';
-import { Task, CreateTaskData, UpdateTaskData, BackendTaskData, ExternalUser, CreateExternalUserData, UpdateExternalUserData } from '../types';
+import { Task, CreateTaskData, BackendTaskData, ExternalUser, CreateExternalUserData, UpdateExternalUserData } from '../types';
 import { useNotifications } from '../hooks/useNotifications';
 import { useToast } from '../hooks/useToast';
 import TaskList from './TaskList';
@@ -68,7 +68,7 @@ const Dashboard: React.FC = () => {
     return () => clearInterval(interval);
   }, [isSignedIn, user?.id, queryClient]);
 
-  const { toasts, removeToast, showSuccess, showError, showInfo } = useToast();
+  const { toasts, removeToast, showSuccess, showError } = useToast();
 
   // Funkcja do pokazywania modala potwierdzenia
   const showConfirmDialog = (title: string, message: string, onConfirm: () => void, type: 'danger' | 'warning' | 'info' = 'danger') => {
@@ -85,7 +85,7 @@ const Dashboard: React.FC = () => {
   // Funkcja do pobierania nazwy użytkownika po ID
   const getUserName = (userId: string): string => {
     if (userId === user?.id) {
-      return user?.fullName || user?.primaryEmailAddress?.emailAddress || 'Ty';
+      return 'Ja';
     }
     
     // Sprawdź czy ID zawiera nazwę w nawiasie (np. "user_123 (Jan Kowalski)")
@@ -102,27 +102,28 @@ const Dashboard: React.FC = () => {
     return userNames[userId] || userId;
   };
 
-  // Funkcja do pobierania pełnej informacji o użytkowniku (ID + nazwa/email)
-  const getUserDisplayInfo = (userId: string): { id: string, name: string } => {
+  // Funkcja do pobierania awatara użytkownika po ID
+  const getUserAvatar = (userId: string): string | null => {
     if (userId === user?.id) {
-      const name = user?.fullName || user?.primaryEmailAddress?.emailAddress || 'Ty';
-      return { id: userId, name };
+      return user?.imageUrl || null;
     }
     
-    // Sprawdź czy to email
-    if (userId.includes('@')) {
-      return { id: userId, name: userId };
+    // Sprawdź w externalUsers
+    const externalUser = externalUsers.find(u => u.id === userId);
+    if (externalUser?.avatar) {
+      return externalUser.avatar;
     }
     
-    // Dla czystego ID, spróbuj znaleźć nazwę w userNames
-    const name = userNames[userId];
-    if (name && name !== userId) {
-      return { id: userId, name };
-    } else {
-      // Jeśli nie ma nazwy, pokaż tylko ID
-      return { id: userId, name: userId };
-    }
+    return null;
   };
+
+  // Funkcja pomocnicza do sprawdzania czy użytkownik jest w assignedTo
+  const isUserAssigned = (assignedTo: string | string[] | undefined, userId: string): boolean => {
+    if (!assignedTo) return false;
+    const assignedUsers = Array.isArray(assignedTo) ? assignedTo : [assignedTo];
+    return assignedUsers.includes(userId);
+  };
+
 
   // Funkcja do aktualizacji listy użytkowników, którzy przypisali mi zadania
   const updateAssignedUsers = (tasks: Task[]) => {
@@ -140,16 +141,6 @@ const Dashboard: React.FC = () => {
     setAssignedUsers(usersArray);
   };
 
-  // Funkcja do usuwania użytkownika z listy przypisanych
-  const removeAssignedUser = (userId: string) => {
-    setAssignedUsers(prev => prev.filter(user => user.id !== userId));
-  };
-
-  // Funkcja do resetowania filtrów
-  const resetFilters = () => {
-    setTaskCategory('all');
-    setAssignedByFilter(null);
-  };
 
   // Ustawianie tokenu Clerk dla API
   useEffect(() => {
@@ -217,7 +208,7 @@ const Dashboard: React.FC = () => {
     let isAssignedToMe = false;
     if (task.assignedTo && (currentUserId || currentUserEmail || currentUserName)) {
       // Sprawdź dokładne dopasowanie (ID, email, nazwa)
-      if (task.assignedTo === currentUserId || task.assignedTo === currentUserEmail || task.assignedTo === currentUserName) {
+      if (isUserAssigned(task.assignedTo, currentUserId || '') || isUserAssigned(task.assignedTo, currentUserEmail || '') || isUserAssigned(task.assignedTo, currentUserName || '')) {
         isAssignedToMe = true;
       }
     }
@@ -263,6 +254,8 @@ const Dashboard: React.FC = () => {
       priority: priorityMap[task.priority] || 'średni',
       images: task.images || [],
       assignedTo: task.assignedTo,
+      assignedUserNote: task.assignedUserNote,
+      assignedUserNoteAuthor: task.assignedUserNoteAuthor,
       isAssignedToMe: isAssignedToMe,
       isCreatedByMe: isCreatedByMe,
       isSharedWithMe: isSharedWithMe,
@@ -309,12 +302,13 @@ const Dashboard: React.FC = () => {
         }
         break;
       case 'assigned-to-users':
-        // Zadania które ja utworzyłem i przypisałem do innych
+        // Zadania które ja utworzyłem i które mają przypisanych użytkowników
         filteredTasks = tasks.filter(task => {
           if (!task.isCreatedByMe || !task.assignedTo) return false;
           
-          // Sprawdź czy nie jest przypisane do mnie
-          return task.assignedTo !== user?.id && task.assignedTo !== user?.primaryEmailAddress?.emailAddress;
+          // Sprawdź czy ma przypisanych użytkowników (włącznie ze mną)
+          const assignedUsers = Array.isArray(task.assignedTo) ? task.assignedTo : (task.assignedTo ? [task.assignedTo] : []);
+          return assignedUsers.length > 0;
         });
         break;
       case 'shared':
@@ -351,7 +345,7 @@ const Dashboard: React.FC = () => {
   );
 
   // Query do pobierania użytkowników zewnętrznych
-  const { data: externalUsersData = [], isLoading: externalUsersLoading } = useQuery<ExternalUser[], Error>(
+  const { data: externalUsersData = [] } = useQuery<ExternalUser[], Error>(
     ['externalUsers'],
     () => externalUsersApi.getAll().then(res => res.data),
     {
@@ -452,6 +446,39 @@ const Dashboard: React.FC = () => {
     }
   }, [tasks, user?.id, addNotification]);
 
+  // Generowanie powiadomień dla nowych notatek od przypisanych użytkowników
+  useEffect(() => {
+    if (tasks.length > 0 && user?.id) {
+      tasks.forEach(task => {
+        // Sprawdź czy zadanie ma notatkę od przypisanego użytkownika
+        if (task.assignedUserNote && task.assignedUserNoteAuthor && 
+            task.assignedUserNoteAuthor !== user?.id && 
+            task.clerkUserId === user?.id) { // Tylko dla twórców zadań
+          
+          const notificationKey = `note_${task._id}_${task.assignedUserNoteAuthor}`;
+          const existingNotification = localStorage.getItem(notificationKey);
+          
+          if (!existingNotification) {
+            // To nowa notatka od przypisanego użytkownika - dodaj powiadomienie
+            const fromUserName = getUserName(task.assignedUserNoteAuthor);
+            addNotification({
+              type: 'task_updated',
+              title: 'Nowa notatka do zadania',
+              message: `${fromUserName} dodał notatkę do zadania "${task.title}": "${task.assignedUserNote.substring(0, 100)}${task.assignedUserNote.length > 100 ? '...' : ''}"`,
+              taskId: task._id,
+              taskTitle: task.title,
+              fromUserId: task.assignedUserNoteAuthor,
+              fromUserName: fromUserName,
+            });
+            
+            // Zapisz w localStorage żeby nie pokazywać ponownie
+            localStorage.setItem(notificationKey, 'true');
+          }
+        }
+      });
+    }
+  }, [tasks, user?.id, addNotification]);
+
   // Usunięto problematyczny useEffect, który powodował nieskończoną pętlę
 
   // Mutacje
@@ -486,8 +513,7 @@ const Dashboard: React.FC = () => {
         
         // Dodaj powiadomienie o aktualizacji zadania
         const task = tasks.find(t => t._id === variables.id);
-        if (task && task.assignedTo && task.assignedTo !== user?.id) {
-          const assignedUserName = getUserName(task.assignedTo);
+        if (task && task.assignedTo && !isUserAssigned(task.assignedTo, user?.id || '')) {
           addNotification({
             type: 'task_updated',
             title: 'Zadanie zostało zaktualizowane',
@@ -598,8 +624,7 @@ const Dashboard: React.FC = () => {
       const mappedStatus = statusMap[status] || 'DO_ZROBIENIA';
       
       // Dodaj powiadomienie o zmianie statusu
-      if (task.assignedTo && task.assignedTo !== user?.id) {
-        const assignedUserName = getUserName(task.assignedTo);
+      if (task.assignedTo && !isUserAssigned(task.assignedTo, user?.id || '')) {
         const statusText = {
           'do zrobienia': 'Do zrobienia',
           'w trakcie': 'W trakcie',
@@ -1084,10 +1109,9 @@ const Dashboard: React.FC = () => {
               }`}
             >
               <span className="hidden sm:inline">Przypisane do użytkowników</span>
-              <span className="sm:hidden">Do użytkowników</span> ({tasks.filter(t => {
+              <span className="sm:hidden">Do użytkowników</span>               ({tasks.filter(t => {
                 if (!t.isCreatedByMe || !t.assignedTo) return false;
-                const cleanAssignedTo = t.assignedTo.replace(/\s*\(.+?\)$/, '');
-                return cleanAssignedTo !== user?.id && t.assignedTo !== user?.primaryEmailAddress?.emailAddress;
+                return !isUserAssigned(t.assignedTo, user?.id || '') && !isUserAssigned(t.assignedTo, user?.primaryEmailAddress?.emailAddress || '');
               }).length})
             </button>
             <button
@@ -1168,6 +1192,7 @@ const Dashboard: React.FC = () => {
           selectedTasks={isSelectionMode ? selectedTasksForBulkShare : new Set()}
           isLoading={tasksLoading}
           getUserName={getUserName}
+          getUserAvatar={getUserAvatar}
         />
 
         {/* Modal formularza */}
@@ -1192,6 +1217,7 @@ const Dashboard: React.FC = () => {
           onEdit={handleEditTask}
           onDelete={handleDeleteTask}
           getUserName={getUserName}
+          getUserAvatar={getUserAvatar}
         />
       </div>
 

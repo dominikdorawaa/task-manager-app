@@ -35,7 +35,8 @@ const ExternalUserManager: React.FC<ExternalUserManagerProps> = ({
   const [editingUser, setEditingUser] = useState<ExternalUser | null>(null);
   const [formData, setFormData] = useState<CreateExternalUserData>({
     id: '',
-    name: ''
+    name: '',
+    avatar: ''
   });
 
   if (!isOpen) return null;
@@ -51,7 +52,8 @@ const ExternalUserManager: React.FC<ExternalUserManagerProps> = ({
       onAddUser(formData);
       setFormData({
         id: '',
-        name: ''
+        name: '',
+        avatar: ''
       });
       setShowAddForm(false);
     }
@@ -63,7 +65,8 @@ const ExternalUserManager: React.FC<ExternalUserManagerProps> = ({
       setEditingUser(null);
       setFormData({
         id: '',
-        name: ''
+        name: '',
+        avatar: ''
       });
     }
   };
@@ -72,7 +75,8 @@ const ExternalUserManager: React.FC<ExternalUserManagerProps> = ({
     setEditingUser(user);
     setFormData({
       id: user.id,
-      name: user.name
+      name: user.name,
+      avatar: user.avatar || ''
     });
     setShowAddForm(false);
   };
@@ -178,6 +182,21 @@ const ExternalUserManager: React.FC<ExternalUserManagerProps> = ({
                   💡 To ID będzie używane do przypisywania zadań temu użytkownikowi
                 </p>
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  URL zdjęcia (opcjonalne)
+                </label>
+                <input
+                  type="url"
+                  value={formData.avatar || ''}
+                  onChange={(e) => setFormData({...formData, avatar: e.target.value})}
+                  className="input"
+                  placeholder="https://example.com/avatar.jpg"
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  💡 Link do zdjęcia profilowego użytkownika
+                </p>
+              </div>
             </div>
             <div className="flex gap-3 mt-4">
               <button
@@ -217,15 +236,38 @@ const ExternalUserManager: React.FC<ExternalUserManagerProps> = ({
                   }`}
                 >
                   <div className="flex items-center justify-between mb-3">
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-gray-900 dark:text-white">
-                        {user.name}
-                      </h4>
-                      {!user.isActive && (
-                        <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 mt-1 inline-block">
-                          Nieaktywny
-                        </span>
-                      )}
+                    <div className="flex items-center gap-3 flex-1">
+                      <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center border border-blue-200 dark:border-blue-500/50 overflow-hidden">
+                        {user.avatar ? (
+                          <img 
+                            src={user.avatar} 
+                            alt={user.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                              if (nextElement) {
+                                nextElement.style.display = 'flex';
+                              }
+                            }}
+                          />
+                        ) : null}
+                        <User 
+                          size={20} 
+                          className="text-blue-600 dark:text-blue-300"
+                          style={{ display: user.avatar ? 'none' : 'flex' }}
+                        />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-gray-900 dark:text-white">
+                          {user.name}
+                        </h4>
+                        {!user.isActive && (
+                          <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 mt-1 inline-block">
+                            Nieaktywny
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div className="flex gap-1">
                       <button

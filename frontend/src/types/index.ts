@@ -9,7 +9,9 @@ export interface Task {
   tags: string[];
   images: string[];
   userId: string;
-  assignedTo?: string; // Clerk User ID użytkownika przypisanego do zadania
+  assignedTo?: string[]; // Clerk User IDs użytkowników przypisanych do zadania
+  assignedUserNote?: string; // Notatka od przypisanego użytkownika
+  assignedUserNoteAuthor?: string; // ID użytkownika który dodał notatkę
   isAssignedToMe?: boolean; // Czy zadanie jest przypisane do mnie (nie utworzone przeze mnie)
   isCreatedByMe?: boolean; // Czy zadanie zostało utworzone przeze mnie
   clerkUserId: string; // ID użytkownika, który utworzył zadanie
@@ -53,7 +55,9 @@ export interface CreateTaskData {
   dueDate?: string;
   tags?: string[];
   images?: string[];
-  assignedTo?: string;
+  assignedTo?: string[];
+  assignedUserNote?: string;
+  assignedUserNoteAuthor?: string;
 }
 
 // Typy dla danych wysyłanych do backendu (z angielskimi enumami)
@@ -65,7 +69,9 @@ export interface BackendTaskData {
   dueDate?: string;
   tags?: string[];
   images?: string[];
-  assignedTo?: string;
+  assignedTo?: string[];
+  assignedUserNote?: string;
+  assignedUserNoteAuthor?: string;
 }
 
 export interface UpdateTaskData extends Partial<CreateTaskData> {
@@ -115,6 +121,7 @@ export interface RequestAccessData {
 export interface ExternalUser {
   id: string;
   name: string;
+  avatar?: string; // URL do zdjęcia użytkownika
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -123,11 +130,13 @@ export interface ExternalUser {
 export interface CreateExternalUserData {
   id: string;
   name: string;
+  avatar?: string;
 }
 
 export interface UpdateExternalUserData {
   id?: string;
   name?: string;
+  avatar?: string;
   isActive?: boolean;
 }
 

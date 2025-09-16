@@ -18,7 +18,10 @@ public class CreateTaskRequest {
     private String dueDate; // String format: YYYY-MM-DD
     private String[] tags;
     private String[] images; // Ścieżki do zdjęć
-    private String assignedTo; // Clerk User ID użytkownika przypisanego do zadania
+    private String[] assignedTo; // Clerk User IDs użytkowników przypisanych do zadania
+    @Size(max = 1000, message = "Notatka nie może być dłuższa niż 1000 znaków")
+    private String assignedUserNote; // Notatka od przypisanego użytkownika
+    private String assignedUserNoteAuthor; // ID użytkownika który dodał notatkę
 
     public Task.TaskStatus getTaskStatus() {
         if (status == null) return Task.TaskStatus.DO_ZROBIENIA;

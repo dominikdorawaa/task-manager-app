@@ -9,7 +9,7 @@ import {
   CheckCircle, 
   Clock, 
   AlertCircle,
-  Image as ImageIcon,
+  XCircle,
   User as UserIcon,
   Edit,
   Trash2
@@ -17,6 +17,8 @@ import {
 import clsx from 'clsx';
 import { filesApi } from '../services/api';
 import ImageModal from './ImageModal';
+import ConfirmModal from './ConfirmModal';
+import { useUser } from '@clerk/clerk-react';
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -25,6 +27,7 @@ interface TaskModalProps {
   onEdit?: (task: Task) => void;
   onDelete?: (taskId: string) => void;
   getUserName: (userId: string) => string;
+  getUserAvatar?: (userId: string) => string | null;
 }
 
 const TaskModal: React.FC<TaskModalProps> = ({ 
@@ -33,12 +36,31 @@ const TaskModal: React.FC<TaskModalProps> = ({
   task, 
   onEdit, 
   onDelete,
-  getUserName 
+  getUserName,
+  getUserAvatar: getUserAvatarProp
 }) => {
   const [isImageModalOpen, setIsImageModalOpen] = React.useState(false);
   const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
+  const [showConfirmModal, setShowConfirmModal] = React.useState(false);
+  const { user: currentUser } = useUser();
 
   if (!isOpen || !task) return null;
+
+  // Funkcja do pobierania awatara użytkownika
+  const getUserAvatar = (userId: string): string | null => {
+    // Jeśli to aktualny użytkownik, użyj jego awatara
+    if (userId === currentUser?.id && currentUser?.imageUrl) {
+      return currentUser.imageUrl;
+    }
+    
+    // Użyj funkcji przekazanej przez props
+    if (getUserAvatarProp) {
+      return getUserAvatarProp(userId);
+    }
+    
+    // Dla innych użytkowników, na razie zwróć null
+    return null;
+  };
 
   const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'zakończone';
   
@@ -84,7 +106,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
     switch (status) {
       case 'zakończone': return 'text-green-500 bg-green-50 dark:text-green-300 dark:bg-green-900/30';
       case 'w trakcie': return 'text-blue-500 bg-blue-50 dark:text-blue-300 dark:bg-blue-900/30';
-      case 'anulowane': return 'text-gray-500 bg-gray-50 dark:text-gray-300 dark:bg-gray-800/50';
+      case 'anulowane': return 'text-red-500 bg-red-50 dark:text-red-300 dark:bg-red-900/30';
       default: return 'text-blue-500 bg-blue-50 dark:text-blue-300 dark:bg-blue-900/30';
     }
   };
@@ -97,10 +119,21 @@ const TaskModal: React.FC<TaskModalProps> = ({
   };
 
   const handleDelete = () => {
-    if (onDelete && window.confirm('Czy na pewno chcesz usunąć to zadanie?')) {
+    if (onDelete) {
+      setShowConfirmModal(true);
+    }
+  };
+
+  const confirmDelete = () => {
+    if (onDelete) {
       onDelete(task._id);
       onClose();
+      setShowConfirmModal(false);
     }
+  };
+
+  const cancelDelete = () => {
+    setShowConfirmModal(false);
   };
 
   return (
@@ -143,6 +176,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
                   {task.status === 'do zrobienia' && <Clock size={14} className="mr-1" />}
                   {task.status === 'w trakcie' && <AlertCircle size={14} className="mr-1" />}
                   {task.status === 'zakończone' && <CheckCircle size={14} className="mr-1" />}
+                  {task.status === 'anulowane' && <XCircle size={14} className="mr-1" />}
                   {task.status}
                 </span>
                 <span className={clsx("badge text-sm", getPriorityColor(task.priority))}>
@@ -239,20 +273,107 @@ const TaskModal: React.FC<TaskModalProps> = ({
               </div>
             )}
 
-            {/* Przypisany użytkownik */}
-            {task.assignedTo && !(task.isAssignedToMe && task.isCreatedByMe) && (
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Przypisanie</h3>
-                <div className="flex items-center text-gray-600 dark:text-gray-300">
-                  <UserIcon size={18} className="mr-3" />
+            {/* Informacje o przypisaniu */}
+            {task.assignedTo && (
+              <div className="space-y-4">
+                {/* Sekcja "Przypisane przez:" - pokazuje osobę która utworzyła zadanie */}
+                {!task.isCreatedByMe && (
                   <div>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">
-                      {task.isAssignedToMe ? 'Przypisane przez:' : 'Przypisane do:'}
-                    </span>
-                    <div className="font-medium text-blue-600 dark:text-blue-300">
-                      {task.isAssignedToMe ? getUserName(task.clerkUserId) : getUserName(task.assignedTo)}
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                      Przypisane przez:
+                    </h3>
+                    <div className="flex items-center gap-3">
+                      <div className="relative group">
+                        <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center border border-blue-200 dark:border-blue-500/50 overflow-hidden">
+                          {getUserAvatar(task.clerkUserId) ? (
+                            <img 
+                              src={getUserAvatar(task.clerkUserId)!} 
+                              alt={getUserName(task.clerkUserId)}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                                if (nextElement) {
+                                  nextElement.style.display = 'flex';
+                                }
+                              }}
+                            />
+                          ) : null}
+                          <UserIcon 
+                            size={20} 
+                            className="text-blue-600 dark:text-blue-300"
+                            style={{ display: getUserAvatar(task.clerkUserId) ? 'none' : 'flex' }}
+                          />
+                        </div>
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-sm rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                          {getUserName(task.clerkUserId)}
+                        </div>
+                      </div>
+                      <span className="font-medium text-blue-600 dark:text-blue-300">
+                        {getUserName(task.clerkUserId)}
+                      </span>
                     </div>
                   </div>
+                )}
+                
+                {/* Sekcja "Przypisane do:" - pokazuje osoby do których zadanie jest przypisane */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                    Przypisane do:
+                  </h3>
+                  <div className="flex items-center gap-3">
+                    {(() => {
+                      const assignedUsers = Array.isArray(task.assignedTo) ? task.assignedTo : (task.assignedTo ? [task.assignedTo] : []);
+                      
+                      return assignedUsers.map((userId, index) => (
+                        <div key={index} className="flex items-center gap-3">
+                          <div className="relative group">
+                            <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center border border-blue-200 dark:border-blue-500/50 overflow-hidden">
+                              {getUserAvatar(userId) ? (
+                                <img 
+                                  src={getUserAvatar(userId)!} 
+                                  alt={getUserName(userId)}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                    const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                                    if (nextElement) {
+                                      nextElement.style.display = 'flex';
+                                    }
+                                  }}
+                                />
+                              ) : null}
+                              <UserIcon 
+                                size={20} 
+                                className="text-blue-600 dark:text-blue-300"
+                                style={{ display: getUserAvatar(userId) ? 'none' : 'flex' }}
+                              />
+                            </div>
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-sm rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                              {getUserName(userId)}
+                            </div>
+                          </div>
+                          <span className="font-medium text-blue-600 dark:text-blue-300">
+                            {getUserName(userId)}
+                          </span>
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Notatka od przypisanego użytkownika */}
+            {task.assignedUserNote && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                  Notatka od {getUserName(task.assignedUserNoteAuthor || '')}
+                </h3>
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-500/50">
+                  <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                    {task.assignedUserNote}
+                  </p>
                 </div>
               </div>
             )}
@@ -311,6 +432,18 @@ const TaskModal: React.FC<TaskModalProps> = ({
         images={task.images?.map(img => filesApi.getImageUrl(img)) || []}
         currentIndex={currentImageIndex}
         onIndexChange={setCurrentImageIndex}
+      />
+
+      {/* Confirm Modal */}
+      <ConfirmModal
+        isOpen={showConfirmModal}
+        onClose={cancelDelete}
+        onConfirm={confirmDelete}
+        title="Usuń zadanie"
+        message={`Czy na pewno chcesz usunąć zadanie "${task.title}"? Ta operacja jest nieodwracalna.`}
+        type="danger"
+        confirmText="Usuń"
+        cancelText="Anuluj"
       />
     </>
   );

@@ -10,6 +10,7 @@ import {
   CheckCircle, 
   Clock, 
   AlertCircle,
+  XCircle,
   Image as ImageIcon,
   User as UserIcon,
   Share2,
@@ -19,6 +20,7 @@ import {
 import clsx from 'clsx';
 import { filesApi } from '../services/api';
 import ImageModal from './ImageModal';
+import { useUser } from '@clerk/clerk-react';
 
 interface TaskCardProps {
   task: Task;
@@ -30,6 +32,7 @@ interface TaskCardProps {
   onTaskSelection?: (taskId: string) => void;
   isSelected?: boolean;
   getUserName: (userId: string) => string;
+  getUserAvatar?: (userId: string) => string | null;
 }
 
 const TaskCard: React.FC<TaskCardProps> = ({ 
@@ -41,15 +44,34 @@ const TaskCard: React.FC<TaskCardProps> = ({
   onShare,
   onTaskSelection,
   isSelected = false,
-  getUserName
+  getUserName,
+  getUserAvatar: getUserAvatarProp
 }) => {
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageErrors, setImageErrors] = useState<Set<number>>(new Set());
+  const { user: currentUser } = useUser();
   const [imageRetries, setImageRetries] = useState<Map<number, number>>(new Map());
   const imageClickRef = useRef(false);
   
   const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'zakończone';
+
+  // Funkcja do pobierania awatara użytkownika
+  const getUserAvatar = (userId: string): string | null => {
+    // Jeśli to aktualny użytkownik, użyj jego awatara
+    if (userId === currentUser?.id && currentUser?.imageUrl) {
+      return currentUser.imageUrl;
+    }
+    
+    // Użyj funkcji przekazanej przez props
+    if (getUserAvatarProp) {
+      return getUserAvatarProp(userId);
+    }
+    
+    // Dla innych użytkowników, spróbuj pobrać z Clerk API
+    // Na razie zwróć null, żeby pokazać domyślną ikonę
+    return null;
+  };
   
   // Funkcja do obliczania dni do zakończenia
   const getDaysUntilDue = () => {
@@ -133,7 +155,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
     switch (status) {
       case 'zakończone': return 'text-green-500 bg-green-50 dark:text-green-300 dark:bg-green-900/30';
       case 'w trakcie': return 'text-blue-500 bg-blue-50 dark:text-blue-300 dark:bg-blue-900/30';
-      case 'anulowane': return 'text-gray-500 bg-gray-50 dark:text-gray-300 dark:bg-gray-800/50';
+      case 'anulowane': return 'text-red-500 bg-red-50 dark:text-red-300 dark:bg-red-900/30';
       default: return 'text-blue-500 bg-blue-50 dark:text-blue-300 dark:bg-blue-900/30';
     }
   };
@@ -247,6 +269,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
             {task.status === 'do zrobienia' && <Clock size={12} className="mr-1" />}
             {task.status === 'w trakcie' && <AlertCircle size={12} className="mr-1" />}
             {task.status === 'zakończone' && <CheckCircle size={12} className="mr-1" />}
+            {task.status === 'anulowane' && <XCircle size={12} className="mr-1" />}
             {task.status}
           </span>
           <span className={clsx("badge", getPriorityColor(task.priority))}>
@@ -287,19 +310,120 @@ const TaskCard: React.FC<TaskCardProps> = ({
           </div>
         )}
 
-        {/* Przypisany użytkownik */}
-        {task.assignedTo && !(task.isAssignedToMe && task.isCreatedByMe) && (
+        {/* Informacje o przypisaniu */}
+        {(() => {
+          // Konwersja assignedTo na tablicę jeśli nie jest
+          const assignedUsers = Array.isArray(task.assignedTo) ? task.assignedTo : (task.assignedTo ? [task.assignedTo] : []);
+          
+          return assignedUsers.length > 0 && (
+            <div className="text-sm text-gray-600 dark:text-gray-300 space-y-2">
+              {/* Sekcja "Przypisane przez:" - pokazuje osobę która utworzyła zadanie */}
+              {!task.isCreatedByMe && (
+                <div>
+                  <div className="flex items-center mb-1">
+                    <UserIcon size={14} className="mr-2 flex-shrink-0" />
+                    <span className="text-xs">Przypisane przez:</span>
+                  </div>
+                  <div className="ml-6 flex items-center space-x-2">
+                    <div className="relative group">
+                      <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center border border-blue-200 dark:border-blue-500/50 overflow-hidden">
+                        {getUserAvatar(task.clerkUserId) ? (
+                          <img 
+                            src={getUserAvatar(task.clerkUserId)!} 
+                            alt={getUserName(task.clerkUserId)}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                              if (nextElement) {
+                                nextElement.style.display = 'flex';
+                              }
+                            }}
+                          />
+                        ) : null}
+                        <UserIcon 
+                          size={16} 
+                          className="text-blue-600 dark:text-blue-300"
+                          style={{ display: getUserAvatar(task.clerkUserId) ? 'none' : 'flex' }}
+                        />
+                      </div>
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                        {getUserName(task.clerkUserId)}
+                      </div>
+                    </div>
+                    <span className="font-medium text-blue-600 dark:text-blue-300 break-words text-xs">
+                      {getUserName(task.clerkUserId)}
+                    </span>
+                  </div>
+                </div>
+              )}
+              
+              {/* Sekcja "Przypisane do:" - pokazuje osoby do których zadanie jest przypisane */}
+              <div>
+                <div className="flex items-center mb-1">
+                  <UserIcon size={14} className="mr-2 flex-shrink-0" />
+                  <span className="text-xs">Przypisane do:</span>
+                </div>
+                <div className="ml-6 flex flex-wrap gap-2">
+                  {assignedUsers.map((userId, index) => (
+                    <div key={index} className="flex items-center space-x-2">
+                      <div className="relative group">
+                        <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center border border-blue-200 dark:border-blue-500/50 overflow-hidden">
+                          {getUserAvatar(userId) ? (
+                            <img 
+                              src={getUserAvatar(userId)!} 
+                              alt={getUserName(userId)}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                                if (nextElement) {
+                                  nextElement.style.display = 'flex';
+                                }
+                              }}
+                            />
+                          ) : null}
+                          <UserIcon 
+                            size={16} 
+                            className="text-blue-600 dark:text-blue-300"
+                            style={{ display: getUserAvatar(userId) ? 'none' : 'flex' }}
+                          />
+                        </div>
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                          {getUserName(userId)}
+                        </div>
+                      </div>
+                      <span className="font-medium text-blue-600 dark:text-blue-300 break-words text-xs">
+                        {getUserName(userId)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Notatka od przypisanego użytkownika */}
+        {(() => {
+          // Debug log
+          console.log('=== TASK CARD DEBUG ===');
+          console.log('Task title:', task.title);
+          console.log('task.assignedUserNote:', task.assignedUserNote);
+          console.log('task.assignedUserNoteAuthor:', task.assignedUserNoteAuthor);
+          return null;
+        })()}
+        {task.assignedUserNote && (
           <div className="text-sm text-gray-600 dark:text-gray-300">
-            <div className="flex items-center mb-1">
-              <UserIcon size={14} className="mr-2 flex-shrink-0" />
-              <span className="text-xs">
-                {task.isAssignedToMe ? 'Przypisane przez:' : 'Przypisane do:'}
+            <div className="flex items-start mb-1">
+              <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                Notatka od {getUserName(task.assignedUserNoteAuthor || '')}:
               </span>
             </div>
-            <div className="ml-6">
-              <span className="font-medium text-blue-600 dark:text-blue-300 break-words">
-                {task.isAssignedToMe ? getUserName(task.clerkUserId) : getUserName(task.assignedTo)}
-              </span>
+            <div className="ml-0 p-2 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-500/50">
+              <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                {task.assignedUserNote}
+              </p>
             </div>
           </div>
         )}
