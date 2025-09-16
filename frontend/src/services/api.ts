@@ -2,7 +2,7 @@ import axios from 'axios';
 import { Task, TaskStats, BackendTaskData } from '../types';
 
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://task-manager-render.onrender.com/api';
+const API_BASE_URL ='https://task-manager-render.onrender.com/api';
 
 console.log('🔍 API_BASE_URL:', API_BASE_URL);
 console.log('🔍 REACT_APP_API_URL env:', process.env.REACT_APP_API_URL);
