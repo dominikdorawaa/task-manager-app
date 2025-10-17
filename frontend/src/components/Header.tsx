@@ -85,9 +85,13 @@ const Header: React.FC = () => {
           {/* Mobile menu button */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="md:hidden p-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-[#212121] dark:hover:bg-[#2a2a2a] transition-colors"
+            className="md:hidden p-2 rounded-lg bg-gray-300 hover:bg-gray-400 dark:bg-[#212121] dark:hover:bg-[#2a2a2a] transition-colors"
           >
-            {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+      {isMobileMenuOpen ? (
+  <X size={20} className="text-gray-600 dark:text-gray-300" />
+) : (
+  <Menu size={20} className="text-gray-600 dark:text-gray-300" />
+)}
           </button>
         </div>
 
@@ -115,7 +119,7 @@ const Header: React.FC = () => {
                     size={20} 
                     className={`text-gray-600 dark:text-gray-300 ${isRefreshing ? 'animate-spin' : ''}`} 
                   />
-                  <span className="text-sm">Odśwież</span>
+                  <span className="text-sm dark:text-white">Odśwież</span>
                 </button>
               )}
               <button
@@ -127,7 +131,7 @@ const Header: React.FC = () => {
                 ) : (
                   <Sun size={20} className="text-gray-600 dark:text-gray-300" />
                 )}
-                <span className="text-sm">{theme === 'light' ? 'Ciemny' : 'Jasny'}</span>
+                <span className="text-sm dark:text-white">{theme === 'light' ? 'Ciemny' : 'Jasny'}</span>
               </button>
               
               {isSignedIn && user && (

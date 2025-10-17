@@ -55,8 +55,8 @@
   }
   
   .dark .card {
-    background-color: #181818 !important;
-    border-color: #404040 !important;
+    background-color: #181818;
+    border-color: #404040;
     color: white !important;
   }
   

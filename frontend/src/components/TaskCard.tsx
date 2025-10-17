@@ -167,7 +167,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
         isOverdue && "border-red-300 bg-red-50 dark:border-red-500/50 dark:bg-red-900/20",
         task.priority === 'krytyczny' && "border-red-300 bg-red-50 dark:border-red-500/50 dark:bg-red-900/20",
         task.status === 'zakończone' && "border-green-300 bg-green-50 dark:border-green-500/50 dark:bg-green-900/20",
-        task.isAssignedToMe && task.priority !== 'krytyczny' && task.status !== 'zakończone' && "border-blue-300 bg-blue-50 dark:border-blue-500/50 dark:bg-blue-900/20"
+        task.isAssignedToMe && task.priority !== 'krytyczny' && task.status !== 'zakończone' && "border-blue-300 bg-blue-50 dark:border-blue-500/50 dark:bg-blue-950/30"
       )}
       onClick={handleCardClick}
     >
